@@ -9,7 +9,7 @@ module.exports = {
     "host": process.env.DB_HOST,
     "dialect": "mysql",
     "logging": false,
-    "timezone": process.env.DB_TIME
+    "timezone": "+05:30"
   },
   "test": {
     "username": "root",
