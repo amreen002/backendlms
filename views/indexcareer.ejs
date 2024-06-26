@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #007bff;
+        }
+
+        .info-item {
+            margin-bottom: 15px;
+        }
+
+        .info-item b {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Contact Information</h2>
+        <div class="info-item">
+            <b>Name:</b> <%= name %>
+        </div>
+        <div class="info-item">
+            <b>Email:</b> <%= email %>
+        </div>
+        <div class="info-item">
+            <b>Desired Position:</b> <%= desiredPosition %>
+        </div>
+        <div class="info-item">
+            <b>Contact Number:</b> <%= contactNumber %>
+        </div>
+        <div class="info-item">
+            <b>Message:</b> <%= message %>
+        </div>
+
+    </div>
+</body>
+
+</html>
