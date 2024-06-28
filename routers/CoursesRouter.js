@@ -7,7 +7,7 @@ router.post('/addcourses', checkauth, getLogedInUser,upload.single('file'), cour
 
 router.get('/listcourses', checkauth, getLogedInUser ,courses.findAll);
 
-router.get('/courses',courses.findAll);
+router.get('/courses',courses.findAllCourse);
 
 router.get('/courses/:coursesId',courses.courseFindOne);
 

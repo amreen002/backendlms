@@ -5,7 +5,7 @@ let lession = require('../controllers/lessionController');
 let {checkauth,getLogedInUser} = require('../middlware/userAuth')
 router.post('/lession', checkauth, getLogedInUser, upload.single('file'),lession.create)
 
-router.get('/lession',/* checkauth, getLogedInUser, */lession.findAll);
+router.get('/lession', checkauth, getLogedInUser, lession.findAll);
 
 router.get('/lession/:lessionId', checkauth, getLogedInUser,lession.findOne);
 

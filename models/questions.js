@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
+      this.belongsTo(models.User, { foreignKey: 'userId' });
       this.belongsTo(models.Quize, { foreignKey: 'QuizzeId' });
       this.belongsTo(models.CategoriesQuestion, { foreignKey: 'CategoryId' });
     }
@@ -51,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
       field: 'Answer',
       type: DataTypes.JSON
     },
+    userId:{
+      field: 'userId',
+      type: DataTypes.INTEGER
+    },
+    
   }, {
     sequelize,
     modelName: 'Questions',

@@ -2,9 +2,8 @@
 const { Topic ,User ,Courses,Role} = require('../models')
 exports.create = async (req, res) => {
     try {
-      
+        req.body.userId=req.profile.id
         const topic = await Topic.create(req.body)
-
         return res.status(200).json({
             topic: topic,
             success: true,
@@ -23,7 +22,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const topic = await Topic.findOne({ where: { id: req.params.topicId },include: [ { model: Courses }]});
+        const userId=req.profile.id
+        const topic = await Topic.findOne({ where: { id: req.params.topicId ,userId:userId},include: [ { model: Courses }]});
         res.status(200).json({
             topic: topic,
             success: true,
@@ -41,7 +41,7 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
-        let where={}
+        let where={userId:req.profile.id}
         let topic = await Topic.findAll({where ,include: [ { model: Courses }]});
         res.status(200).json({
             topic: topic,
@@ -60,6 +60,7 @@ exports.findAll = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
+        req.body.userId=req.profile.id
         const topic = await Topic.update(req.body, { where: { id: req.params.topicId } });
         res.status(200).json({
             topic: topic,

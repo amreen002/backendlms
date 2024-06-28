@@ -1,7 +1,8 @@
 
 const { Op } = require('sequelize')
 const path =  require("path");
-const { Lession, Role, User ,Batch, Topic ,Courses,Categories} = require('../models')
+const { Lession, Role, User ,Batch, Topic ,Courses,Categories} = require('../models');
+const user = require('../models/user');
 exports.create = async (req, res) => {
     try {
 
@@ -9,7 +10,8 @@ exports.create = async (req, res) => {
             LessionTitle:req.body.LessionTitle,
             CoursesId:req.body.CoursesId,
             TopicId:req.body.TopicId,
-            LessionUpload:req.file.path,
+            userId : req.profile.id,
+            LessionUpload:req.file.path
          }
         const lession = await Lession.create(data)
 
@@ -31,7 +33,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const lession = await Lession.findOne({ where: { id: req.params.lessionId }, include: [{model:Courses,include: [{ model: Topic }] }] });
+        const userId = req.profile.id
+        const lession = await Lession.findOne({ where: { id: req.params.lessionId ,userId:userId}, include: [{model:Courses,include: [{ model: Topic }] }] });
         res.status(200).json({
             lession: lession,
             success: true,
@@ -49,9 +52,8 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
-        let where = {}
-
-        let lession = await Lession.findAll({ where, include: [{model:Courses,include: [{ model: Topic },{model:Categories},{  model: Batch,}] }]});
+        let where = { userId :req.profile.id }
+        let lession = await Lession.findAll({ where, include: [{ model: Topic },{model:Courses,include: [{model:Categories},{  model: Batch}] }]});
         res.status(200).json({
             lession: lession,
             success: true,
@@ -77,6 +79,7 @@ exports.update = async (req, res) => {
             LessionTitle:req.body.LessionTitle,
             CoursesId:req.body.CoursesId,
             TopicId:req.body.TopicId,
+            userId : req.profile.id,
             LessionUpload:req.file?req.file.path :exitedpath.LessionUpload,
          }
         const lession = await Lession.update(data, { where: { id: req.params.lessionId } });

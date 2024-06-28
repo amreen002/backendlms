@@ -8,6 +8,7 @@ exports.create = async (req, res) => {
             Title: req.body.Title,
             CoursesId: req.body.CoursesId,
             TopicId: req.body.TopicId,
+            userId : req.profile.id,
             VideoUplod: req.file.path,
             VideoIframe: req.body.VideoIframe,
         }
@@ -36,7 +37,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const video = await Video.findOne({ where: { id: req.params.videoId }, include: [{ model: Courses, include: [{ model: Topic }] }] });
+        const userId = req.profile.id
+        const video = await Video.findOne({ where: { id: req.params.videoId, userId}, include: [{ model: Courses, include: [{ model: Topic }] }] });
         res.status(200).json({
             video: video,
             success: true,
@@ -54,8 +56,8 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
-        let where = {}
-        let video = await Video.findAll({ where, include: [{ model: Courses, include: [{ model: Topic }, { model: Categories }] }] });
+        let where = {userId :req.profile.id}
+        let video = await Video.findAll({ where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }] });
 
         res.status(200).json({
             video: video,
@@ -84,6 +86,7 @@ exports.update = async (req, res) => {
             Title: req.body.Title,
             CoursesId: req.body.CoursesId,
             TopicId: req.body.TopicId,
+            userId : req.profile.id,
             VideoUplod: req.file ? req.file.path :existingVideoPath.VideoUplod,
             VideoIframe: req.body.VideoIframe,
         }

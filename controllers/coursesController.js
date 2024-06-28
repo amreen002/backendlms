@@ -108,7 +108,7 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     let transaction;
-    
+    let userId = req.profile.id
     try {
             // Start a transaction
             transaction = await sequelize.transaction();
@@ -148,13 +148,15 @@ exports.findAll = async (req, res) => {
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, name FROM topics) topics ON topics.CoursesId = courses.id
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, Title, TopicId, VideoUplod, VideoIframe FROM videos) videos ON videos.CoursesId = courses.id
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, LessionTitle, TopicId, LessionUpload FROM lessions) lessions ON lessions.CoursesId = courses.id
+       WHERE  courses.userId = :userId
        GROUP BY
            courses.id, categories.id, users.id`;
 
         // Execute the raw SQL query
         let courses = await sequelize.query(coursesQuery, {
             type: sequelize.QueryTypes.SELECT,
-            transaction
+            transaction,
+            replacements: {userId:userId }
         });
 
         // Clean up array fields
@@ -199,7 +201,99 @@ exports.findAll = async (req, res) => {
     
     
 };
+exports.findAllCourse = async (req, res) => {
+    let transaction;
+    try {
+            // Start a transaction
+      transaction = await sequelize.transaction();
+    
+       // SQL Query
+       let coursesQuery = `
+       SELECT
+           courses.id,
+           courses.name,
+           courses.CourseDuration,
+           courses.CoursePrice,
+           courses.CourseCategoryId,
+           courses.userId,
+           courses.CourseCode,
+           courses.CourseUplod,
+           courses.Status,
+           courses.updatedAt,
+           courses.AboutCourse,
+           courses.Description,
+           COUNT(DISTINCT students.id) AS studentCount,
+           COUNT(DISTINCT batches.id) AS batchesCount,
+           COUNT(DISTINCT videos.id) AS videoCount,
+           COUNT(DISTINCT lessions.id) AS lessionCount,
+           JSON_ARRAYAGG(JSON_OBJECT('id', students.id, 'Name', students.Name)) AS Students,
+           JSON_ARRAYAGG( JSON_OBJECT('id', batches.id, 'Title', batches.Title)) AS Batches,
+           JSON_OBJECT('id', categories.id, 'name', categories.name ) AS Category,
+           JSON_OBJECT('id', users.id, 'name', users.name ) AS User,
+           JSON_ARRAYAGG( JSON_OBJECT('id', topics.id, 'name', topics.name)) AS Topics,
+           JSON_ARRAYAGG( JSON_OBJECT('id', videos.id, 'Title', videos.Title, 'TopicId', videos.TopicId, 'VideoUplod', videos.VideoUplod, 'VideoIframe', videos.VideoIframe)) AS Videos,
+           JSON_ARRAYAGG( JSON_OBJECT('id', lessions.id, 'LessionTitle', lessions.LessionTitle, 'TopicId', lessions.TopicId, 'LessionUpload', lessions.LessionUpload)) AS Lessions
+       FROM
+           courses
+       LEFT JOIN (SELECT DISTINCT CoursesId, id, Name FROM students) students ON students.CoursesId = courses.id
+       LEFT JOIN (SELECT DISTINCT CoursesId, id, Title FROM batches) batches ON batches.CoursesId = courses.id
+       LEFT JOIN categories ON categories.id = courses.CourseCategoryId
+       LEFT JOIN users ON users.id = courses.userId
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, name FROM topics) topics ON topics.CoursesId = courses.id
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, Title, TopicId, VideoUplod, VideoIframe FROM videos) videos ON videos.CoursesId = courses.id
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, LessionTitle, TopicId, LessionUpload FROM lessions) lessions ON lessions.CoursesId = courses.id
+         
+       GROUP BY
+           courses.id, categories.id, users.id`;
 
+        // Execute the raw SQL query
+        let courses = await sequelize.query(coursesQuery, {
+            type: sequelize.QueryTypes.SELECT,
+            transaction,
+        });
+
+        // Clean up array fields
+        courses = courses.map(course => cleanUpArrayFields(course));
+    
+            // Initialize total counts
+            let totalStudentCount = 0;
+            let totalBatchesCount = 0;
+            let totalVideoCount = 0;
+            let totalLessionCount = 0;
+    
+            // Sum the student and batch counts
+            courses.forEach(course => {
+                totalStudentCount += parseInt(course.studentCount, 10) || 0;
+                totalBatchesCount += parseInt(course.batchesCount, 10) || 0;
+                totalVideoCount += parseInt(course.videoCount, 10) || 0;
+                totalLessionCount += parseInt(course.lessionCount, 10) || 0;
+            });
+    
+            await transaction.commit();
+            res.status(200).json({
+                courses: courses,
+                coursescount: courses.length,
+                totalStudentCount: totalStudentCount,
+                totalBatchesCount: totalBatchesCount,
+                totalVideoCount: totalVideoCount,
+                totalLessionCount: totalLessionCount,
+                success: true,
+                message: "Get All Data Success"
+            });
+    
+        } catch (error) {
+            console.error(error);
+            if (transaction) await transaction.rollback();
+            res.status(500).json({
+                error: error.message || "Failed to retrieve data",
+                success: false,
+                message: "Failed to retrieve data"
+            });
+        }
+    
+    
+    
+};
 exports.courseFindOne = async (req, res) => {
     let transaction;
     try {
@@ -253,8 +347,8 @@ exports.courseFindOne = async (req, res) => {
         courses
 LEFT JOIN students ON students.CoursesId = courses.id
 LEFT JOIN batches ON batches.CoursesId = courses.id
-LEFT JOIN categories ON categories.id = courses.CourseCategoryId
-LEFT JOIN users ON users.id = courses.userId
+       LEFT JOIN categories ON categories.id = courses.CourseCategoryId
+       LEFT JOIN users ON users.id = courses.userId
 LEFT JOIN topics ON topics.CoursesId = courses.id
 LEFT JOIN videos ON videos.CoursesId = courses.id
 LEFT JOIN lessions ON lessions.CoursesId = courses.id
@@ -346,6 +440,7 @@ LEFT JOIN lessions ON lessions.CoursesId = courses.id
 
 
 };
+
 
 
 exports.update = async (req, res) => {
@@ -465,7 +560,7 @@ exports.coursecode = async (req, res) => {
             LEFT JOIN categories ON categories.id = courses.CourseCategoryId
             LEFT JOIN users ON users.id = courses.userId
             WHERE
-                courses.CourseCode = :courseCode
+                courses.CourseCode = :courseCode  
             GROUP BY
                 courses.id, categories.id, users.id
         `;

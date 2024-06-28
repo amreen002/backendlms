@@ -79,7 +79,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const students = await Student.findOne({ where: { id: req.params.studentsId }, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] });
+        const roleId =req.profile.id
+        const students = await Student.findOne({ where: { id: req.params.studentsId ,roleId:roleId}, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             students: students,
             success: true,
@@ -107,8 +108,9 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
-
+        let where ={ roleId :req.profile.id}
         let students = await Student.findAll({
+            where,
             include: [{
                 model: User, include:
                     [{ model: Role }]

@@ -35,7 +35,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const quizze = await Quize.findOne({ where: { id: req.params.quizzeId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Batch }] });
+        const userId =req.profile.id
+        const quizze = await Quize.findOne({ where: { id: req.params.quizzeId,userId:userId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Batch }] });
         res.status(200).json({
             quizze: quizze,
             success: true,
@@ -53,7 +54,9 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
+        let where = { userId :req.profile.id}
         const quizze = await Quize.findAll({
+            where,
             include: [
                 { model: User, include: [{ model: Role }] },
                 { model: Categories },

@@ -72,7 +72,8 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId }, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
+        let userId = req.profile.id
+        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId,roleId:userId}, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -100,8 +101,8 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
-
-        let teachers = await Teacher.findAll({ include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
+        let where={roleId:req.profile.id}
+        let teachers = await Teacher.findAll({where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
         res.status(200).json({
             teachers: teachers,
             success: true,

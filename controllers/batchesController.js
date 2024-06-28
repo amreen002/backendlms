@@ -48,6 +48,7 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
+        const userId = req.profile.id;
         let batchs = await Batch.findOne({ where: { id: req.params.batchesId }, include: [{ model: User, include: [{ model: Role }] }, { model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             batchs: batchs,
@@ -76,7 +77,7 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
-        let where = {}
+        let where = {userId : req.profile.id}
         let batchs = await Batch.findAll({
             where,
             attributes: [
@@ -92,16 +93,13 @@ exports.findAll = async (req, res) => {
                 'BatchStatus',
                 'BatchDatails',
                 'userId',
-                'BatchStartTime', // Retrieve only the BatchStartTime field
-               /*  [sequelize.literal('DATE_FORMAT(BatchEndTime, "%h:%i")'), 'BatchEndTime'],
-                [sequelize.literal('DATE_FORMAT(BatchStartTime, "%h:%i")'), 'BatchStartTime'] */ // Use DATE_FORMAT MySQL function to format time as AM/PM
+                'BatchStartTime', 
             ], include: [{ model: User, include: [{ model: Role }] }, { model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']]
         })
 
         for (let index = 0; index < batchs.length; index++) {
             const StartTime = batchs[index].BatchStartTime;
             const EndTime = batchs[index].BatchEndTime;
-
             const formatTime = (timeString) => {
                 const [hours, minutes] = timeString.split(':').map(Number);
                 const period = hours >= 12 ? 'PM' : 'AM';
@@ -111,8 +109,6 @@ exports.findAll = async (req, res) => {
         
             batchs[index].BatchStartTime = formatTime(StartTime);
             batchs[index].BatchEndTime = formatTime(EndTime);
-
-
         }
 
 

@@ -1,5 +1,5 @@
 
-const { User, Role } = require('../models')
+const { User, Role,Teacher,sequelize } = require('../models')
 /* const nodemailer = require("nodemailer"); */
 /* const ejs = require("ejs"); */
 const path = require("path");
@@ -8,7 +8,7 @@ const { Op } = require('sequelize');
 require('dotenv').config()
 const bcrypt = require('bcrypt');
 const { where } = require('sequelize');
-const secretkey = "token"
+const secretkey = process.env.SESSION_SECRET || 'technogazwersecret'
 
 /* let transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVICE_HOST,
@@ -26,7 +26,7 @@ const secretkey = "token"
     }
 }); */
 exports.create = async (req, res) => {
-
+    const transaction = await sequelize.transaction();
     try {
         let password = req.body.password;
         let roleWiseUsers
@@ -45,13 +45,36 @@ exports.create = async (req, res) => {
             departmentId: req.body.departmentId,
             roleName: roleWiseUsers,
             assignToUsers: req.profile.id,
-            image: req.file.filename,
-            src: req.file.path,
+            image: req.file? req.file.filename :null,
+            src:  req.file? req.file.path :null,
             active: req.body.active
         }
+        const users = await User.create(data,transaction)
 
-        const users = await User.create(data)
-
+        if(users.departmentId == 3){
+            const teacherData = {
+                Name:users.name,
+                Email:users.email,
+                Password: users.password,
+                TeacherType:"Online",
+                Username:users.userName,
+                PhoneNumber:users.phoneNumber,
+                roleId: req.profile.id,  
+            };
+            await Teacher.create(teacherData,transaction);
+        }
+        if(users.departmentId == 4){
+            const studentData= {
+                Name:users.name,
+                Email:users.email,
+                Password: users.password,
+                Username:users.userName,
+                PhoneNumber:users.phoneNumber,
+                roleId: req.profile.id, 
+            };
+            await Student.create(studentData,transaction);
+        }
+       
         users.createdAt = null
         users.password = null
         users.updatedAt = null
@@ -96,7 +119,23 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     try {
         const loggedInUserId = req.profile.id;
-        const loggedInUser = await User.findOne({ where: { id: loggedInUserId }, include: [{ model: Role }] });
+        const loggedInUser = await User.findOne({ where: { id: loggedInUserId }, attributes: [
+            "id",
+            "name",
+            "userName",
+            "phoneNumber",
+            "email",
+            "assignToUsers",
+            "departmentId",
+            "teacherId",
+            "studentId",
+            "roleName",
+            "image",
+            "src",
+            "address",
+            "message",
+            "active",
+        ], include: [{ model: Role }] });
 
         let where = {};
 
@@ -113,7 +152,23 @@ exports.findAll = async (req, res) => {
         }
 
 
-        let userchild = await User.findAll({ where, include: [{ model: Role }] });
+        let userchild = await User.findAll({ where,  attributes: [
+            "id",
+            "name",
+            "userName",
+            "phoneNumber",
+            "email",
+            "assignToUsers",
+            "departmentId",
+            "teacherId",
+            "studentId",
+            "roleName",
+            "image",
+            "src",
+            "address",
+            "message",
+            "active",
+        ],  include: [{ model: Role }] });
 
         if (req.query.LeadGetAllowated) {
             return res.status(200).json({ users: userchild, success: true, message: "Successfully retrieved all users" });
@@ -134,6 +189,11 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         let roleWiseUsers
+        let existingPath = await User.findOne({ where: {  id: req.params.usersId} });
+        if (!existingPath) {
+            return res.status(404).json({ message: 'Existing Proifile not found' });
+        }
+
         let departmentRoleName = await Role.findOne({ where: { id: req.body.departmentId } })
         if (departmentRoleName.Name == 'Admin' || departmentRoleName.Name == 'Instructor' || departmentRoleName.Name == 'Student' || departmentRoleName.Name == 'Guest/Viewer' || departmentRoleName.Name == 'Sale Department' || departmentRoleName.Name == 'Telecaller Department' || departmentRoleName.Name == 'Front Desk' || departmentRoleName.Name == 'Receptions Desk' || departmentRoleName.Name == 'Counselor Department' || departmentRoleName.Name == 'Account Department') {
             roleWiseUsers = 'Admin';
@@ -148,8 +208,8 @@ exports.update = async (req, res) => {
             departmentId: req.body.departmentId,
             roleName: roleWiseUsers,
             assignToUsers: req.profile.id,
-            image: req.file.filename,
-            src: req.file.path,
+            image:  req.file ? req.file.filename :existingPath.image, 
+            src: req.file ? req.file.path :existingPath.src,
             active: req.body.active
         }
 

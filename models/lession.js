@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
   class Lession extends Model {
     static associate(models) {
       this.belongsTo(models.Courses, { foreignKey: 'CoursesId' });
-     // this.belongsTo(models.Topic, { foreignKey: 'TopicId' });
+      this.belongsTo(models.Topic, { foreignKey: 'TopicId' });
+      this.belongsTo(models.User, { foreignKey: 'userId' });
     }
   }
   Lession.init({
@@ -26,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
       field: 'LessionUpload',
       type: DataTypes.STRING,
     },
+    userId:{
+      field: 'userId', 
+      type: DataTypes.INTEGER
+    }
   }, {
     sequelize,
     modelName: 'Lession',
