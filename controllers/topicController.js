@@ -1,9 +1,11 @@
 
-const { Topic ,User ,Courses,Role} = require('../models')
+const {TelecallerDepartment, Topic ,User ,Courses,Role,sequelize} = require('../models')
 exports.create = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         req.body.userId=req.profile.id
-        const topic = await Topic.create(req.body)
+        const topic = await Topic.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             topic: topic,
             success: true,
@@ -22,8 +24,7 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const userId=req.profile.id
-        const topic = await Topic.findOne({ where: { id: req.params.topicId ,userId:userId},include: [ { model: Courses }]});
+        const topic = await Topic.findOne({ where: { id: req.params.topicId},include: [ { model: Courses }]});
         res.status(200).json({
             topic: topic,
             success: true,
@@ -59,15 +60,18 @@ exports.findAll = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         req.body.userId=req.profile.id
-        const topic = await Topic.update(req.body, { where: { id: req.params.topicId } });
+        const topic = await Topic.update(req.body, { where: { id: req.params.topicId },transaction });
+        await transaction.commit();
         res.status(200).json({
             topic: topic,
             success: true,
             message: "Update Successfully Topic"
         });
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             error: error,
             success: false,
@@ -79,13 +83,14 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try {
-        const topic = await TelecallerDepartment.destroy({ where: { id: req.params.topicId } });
+        const topic = await Topic.destroy({ where: { id: req.params.topicId } });
         res.status(200).json({
             topic: topic,
             success: true,
             message: "Delete Successfully Topic"
         });
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             error: error,
             success: false,

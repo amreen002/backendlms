@@ -221,8 +221,6 @@ exports.delete = async (req, res) => {
 exports.country = async (req, res) => {
     try {
         let country = await Countries.findAll({ include: [{ model: Staties, include: [{ model: Cities }] }] });
-
-
         res.status(200).json({
             country: country,
             success: true,

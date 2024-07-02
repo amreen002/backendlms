@@ -6,6 +6,8 @@ router.post('/addbatches', checkauth, getLogedInUser, batches.create)
 
 router.get('/listbatches', checkauth, getLogedInUser, batches.findAll);
 
+router.get('/batches', batches.findAllUsers);
+
 router.get('/listbatches/:batchesId', checkauth, getLogedInUser,batches.findOne);
 
 router.put('/viewsbatches/:batchesId', checkauth, getLogedInUser, batches.update);

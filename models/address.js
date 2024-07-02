@@ -28,6 +28,10 @@ module.exports = (sequelize, DataTypes) => {
         constraints: false,
         as: 'Cities'
       });
+      this.belongsTo(models.User, {
+        foreignKey: 'AddressableId',
+        constraints: false,
+      });
     }
   };
   Address.init({

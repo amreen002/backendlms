@@ -6,6 +6,7 @@ const { Teacher, User, Role, Address, sequelize } = require('../models'); // Adj
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     const { Password, Name, LastName, AddressableId, Email, DOB, TeacherType, Username, PhoneNumber, YourIntroducationAndSkills } = req.body;
+
     try {
         if (!Password) {
             throw new Error('Password is required');
@@ -29,18 +30,22 @@ exports.create = async (req, res) => {
 
         let teachers = await Teacher.create(teacherData, { transaction });
 
+        const addressData = {
+            AddressableId: teachers.id,
+            AddressableType: "Instructor",
+            ...req.body
+        };
 
-        // Set the necessary fields for the Address creation
-        req.body.AddressableId = teachers.id;
-        req.body.AddressableType = "Instructor";
+        const address = await Address.create(addressData, { transaction });
 
-        // Create the Address entry
-        let address = await Address.create(req.body, { transaction });
         await Teacher.update(
             { AddressableId: address.id },
             { where: { id: teachers.id }, transaction }
         );
-        let users = {
+
+        const updatedTeacher = await Teacher.findOne({ where: { id: teachers.id }, transaction });
+
+        const userData = {
             teacherId: teachers.id,
             name: teachers.Name,
             userName: teachers.Username,
@@ -50,30 +55,36 @@ exports.create = async (req, res) => {
             assignToUsers: req.profile.id,
             departmentId: 3,
             roleName: "Admin",
-        }
-        await User.create(users, { transaction });
+            AddressableId: address.id
+        };
+
+        const user = await User.create(userData, { transaction });
+
         await transaction.commit();
+
         return res.status(200).json({
-            teachers: teachers,
+            teachers: updatedTeacher,
             address: address,
+            user: user,
             success: true,
-            message: "Teacher Created SuccessFully"
-        })
+            message: "Teacher created successfully"
+        });
+
     } catch (error) {
-        console.log(error)
+        console.log(error);
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
-            message: "Teacher error"
-        })
+            message: "Error creating teacher"
+        });
     }
+};
 
-}
 
 exports.findOne = async (req, res) => {
     try {
-        let userId = req.profile.id
-        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId,roleId:userId}, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
+        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId}, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -101,7 +112,32 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
-        let where={roleId:req.profile.id}
+        let where;
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }]
+        });
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
+            where = {}
+        else {
+            where = { roleId: loggedInUserId }
+        }
         let teachers = await Teacher.findAll({where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
         res.status(200).json({
             teachers: teachers,
@@ -119,9 +155,9 @@ exports.findAll = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-    let transaction = await sequelize.transaction();
+    const transaction = await sequelize.transaction();
     try {
-        let data = {
+        const data = {
             Name: req.body.Name,
             LastName: req.body.LastName,
             AddressableId: req.body.AddressableId,
@@ -130,71 +166,76 @@ exports.update = async (req, res) => {
             TeacherType: req.body.TeacherType,
             Username: req.body.Username,
             PhoneNumber: req.body.PhoneNumber,
-            roleId: req.profile.id,
             YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
-        }
-        let teachers = await Teacher.update(data, { where: { id: req.params.teachersId }, order: [['updatedAt', 'DESC']], transaction });
-        // Find the associated address
-        const address = await Address.findOne({ where: { AddressableId: req.params.teachersId }, transaction });
+        };
 
-        if (!address) {
+        await Teacher.update(data, { where: { id: req.params.teachersId }, transaction });
+
+        const user = await User.findOne({ where: { teacherId: req.params.teachersId }, transaction });
+  
+        if (!user) {
             await transaction.rollback();
             return res.status(404).json({
                 success: false,
-                message: "Address not found"
+                message: "Associated user not found"
             });
         }
 
-        // Re-fetch the updated FrontDesk entry
-        teachers = await Teacher.findOne({ where: { id: req.params.teachersId }, transaction });
-        if (!teachers) {
+        const updatedTeacher = await Teacher.findOne({ where: { id: req.params.teachersId }, transaction });
+        if (!updatedTeacher) {
             await transaction.rollback();
             return res.status(404).json({
                 success: false,
-                message: "Teachers not found"
+                message: "Teacher not found"
             });
         }
 
-        // Set the required fields for updating the Address entry
-        req.body.AddressableId = teachers.id;
+        let address = await Address.findOne({ where: { AddressableId: req.params.teachersId }, transaction });
+        if (user.teacherId === updatedTeacher.id) {
+            const addressusers = await Address.findOne({ where: { AddressableId: user.id }, transaction });
+            req.body.AddressableId = user.id;
+            req.body.AddressableType = "Instructor";
+            await Address.update(req.body, { where: { id: addressusers.id }, transaction });
+        }
+        req.body.AddressableId = req.params.teachersId;
         req.body.AddressableType = "Instructor";
-
-        // Update the Address entry
         await Address.update(req.body, { where: { id: address.id }, transaction });
 
-        // Retrieve the updated Address entry
-        const updatedAddress = await Address.findOne({ where: { id: address.id }, transaction });
+       
+        const updatedAddress = await Address.findOne({ where: { id: address }, transaction });
 
-        let users = {
-            name: teachers.Name,
-            userName: teachers.Username,
-            phoneNumber: teachers.PhoneNumber,
-            email: teachers.Email,
-            password: teachers.Password,
-/*             assignToUsers: req.profile.id, */
-            departmentId: 3,
+        const updatedUserData = {
+            name: updatedTeacher.Name,
+            userName: updatedTeacher.Username,
+            phoneNumber: updatedTeacher.PhoneNumber,
+            email: updatedTeacher.Email,
+            password: user.password, // Assuming password should not change, or retrieve it from user record
+            departmentId: 3, // Assuming departmentId 3 corresponds to 'Instructor'
             roleName: "Admin",
-        }
-        let usersupdate = await User.findOne({ where: { teacherId: req.params.teachersId }, transaction });
-        await User.update(users, { where: { id: usersupdate.id }, transaction });
+            teacherId: updatedTeacher.id,
+            AddressableId: updatedTeacher.AddressableId,
+        };
+
+        await User.update(updatedUserData, { where: { id: user.id }, transaction });
         await transaction.commit();
 
         res.status(200).json({
-            teachers: teachers,
+            teachers: updatedTeacher,
             address: updatedAddress,
             success: true,
-            message: "Update Successfully Teachers"
+            message: "Teacher updated successfully"
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
-            message: "error  While Update The Teachers"
+            message: "Error while updating the teacher"
         });
     }
+};
 
-}
 
 exports.delete = async (req, res) => {
     try {

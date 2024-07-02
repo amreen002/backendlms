@@ -77,7 +77,33 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
-        let where = {userId : req.profile.id}
+
+        let where;
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }]
+        });
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
+            where = {}
+        else {
+            where = { userId: loggedInUserId }
+        }
         let batchs = await Batch.findAll({
             where,
             attributes: [
@@ -127,6 +153,56 @@ exports.findAll = async (req, res) => {
     }
 };
 
+exports.findAllUsers = async (req, res) => {
+    try {
+
+        let batchs = await Batch.findAll({
+            attributes: [
+                'id',
+                'Title',
+                'BatchEniqueId',
+                'BatchEndTime',
+                'InstructorId',
+                'CoursesId',
+                'BatchDuration',
+                'BatchsInWeek',
+                'StartedAtWeek',
+                'BatchStatus',
+                'BatchDatails',
+                'userId',
+                'BatchStartTime', 
+            ], include: [{ model: User, include: [{ model: Role }] }, { model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']]
+        })
+
+        for (let index = 0; index < batchs.length; index++) {
+            const StartTime = batchs[index].BatchStartTime;
+            const EndTime = batchs[index].BatchEndTime;
+            const formatTime = (timeString) => {
+                const [hours, minutes] = timeString.split(':').map(Number);
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const formattedHours = hours % 12 || 12;
+                return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+            };
+        
+            batchs[index].BatchStartTime = formatTime(StartTime);
+            batchs[index].BatchEndTime = formatTime(EndTime);
+        }
+
+
+        res.status(200).json({
+            batchs: batchs,
+            success: true,
+            message: "Get All Data Success"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: "Failed to retrieve data"
+        });
+    }
+};
 exports.update = async (req, res) => {
     let transaction;
     try {

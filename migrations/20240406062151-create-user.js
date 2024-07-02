@@ -51,6 +51,11 @@ module.exports = {
         allowNull: true,
         defaultValue: 0,
       },
+      AddressableId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+      },
       roleName: {
         type: Sequelize.ENUM('Super Admin', 'Admin', 'Sub Admin')
       },

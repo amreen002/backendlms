@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Topic, { foreignKey: 'userId' }); 
       this.hasMany(models.Lession, { foreignKey: 'userId' });
       this.hasMany(models.Video, { foreignKey: 'userId' });
+      this.belongsTo(models.Address, {
+        foreignKey: 'AddressableId',
+        constraints: false,
+      });
     }
   }
   User.init({
@@ -59,6 +63,11 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 0,
     },
     studentId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    AddressableId: {
       type:DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 0,

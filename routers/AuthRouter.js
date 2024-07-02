@@ -1,13 +1,32 @@
 const express = require('express')
+
 const router = express.Router()
+
 const { User } = require('../models')
+
 const loginValidator  = require('../validations/authvalidator');
+
 const validations = require('../validations/validator');
-const Usersign = require('../controllers/authControllers')
+
+const users = require('../controllers/authControllers')
+
+let upload = require('../middlware/upload')
+
 let {getLogedInUser} = require('../middlware/userAuth')
-router.post('/login',/* loginValidator.authValidator,validations.validate, */ Usersign.login)
-router.post('/logout', Usersign.signout)
-router.get('/userwisedata', getLogedInUser,Usersign.userWisedata);
+
+router.post('/login',/* loginValidator.authValidator,validations.validate, */ users.login)
+
+router.post('/signup',upload.single('file'), users.signup)
+
+router.get('/signup/:usersId',users.findOne);
+
+router.put('/signup/:usersId',upload.single('file'),users.update);
+
+router.post('/logout', users.signout)
+
+router.get('/userwisedata', getLogedInUser,users.userWisedata);
+
+router.get('/country', users.country);
 
 module.exports = router;
 
