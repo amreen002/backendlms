@@ -139,14 +139,14 @@ exports.findOne = async (req, res) => {
         res.status(200).json({
             users: users,
             success: true,
-            message: "get one users by ID"
+            message: "Fetched user by ID successfully"
         });
     } catch (error) {
         console.log(error)
-        res.status(400).json({
+        res.status(500).json({
             error: error,
             success: false,
-            message: 'error in getting the users'
+            message: "Error in fetching the user"
         });
     }
 }

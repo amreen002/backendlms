@@ -23,7 +23,7 @@ module.exports = {
       },
       LessionUpload: {
         field: 'LessionUpload', 
-        type: Sequelize.STRING
+        type: Sequelize.JSON,
       },
       createdAt: {
         allowNull: false,

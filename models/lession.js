@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     LessionUpload: {
       field: 'LessionUpload',
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
     },
     userId:{
       field: 'userId', 

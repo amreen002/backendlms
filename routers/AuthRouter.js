@@ -10,17 +10,17 @@ const validations = require('../validations/validator');
 
 const users = require('../controllers/authControllers')
 
-let upload = require('../middlware/upload')
+let { uploadPDF, uploadImage, uploadVideo }  = require('../middlware/upload')
 
 let {getLogedInUser} = require('../middlware/userAuth')
 
 router.post('/login',/* loginValidator.authValidator,validations.validate, */ users.login)
 
-router.post('/signup',upload.single('file'), users.signup)
+router.post('/signup',uploadImage.single('file'), users.signup)
 
 router.get('/signup/:usersId',users.findOne);
 
-router.put('/signup/:usersId',upload.single('file'),users.update);
+router.put('/signup/:usersId',uploadImage.single('file'),users.update);
 
 router.post('/logout', users.signout)
 

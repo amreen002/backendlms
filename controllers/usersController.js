@@ -124,41 +124,82 @@ exports.create = async (req, res) => {
 
 
 
-
 exports.findOne = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    let Teachers;
+    let Students;
+
     try {
-        const users = await User.findOne({ where: { id: req.params.usersId }, attributes: [
-            "id",
-            "name",
-            "userName",
-            "phoneNumber",
-            "email",
-            "assignToUsers",
-            "departmentId",
-            "teacherId",
-            "studentId",
-            "roleName",
-            "image",
-            "src",
-            "address",
-            "message",
-            "active",
-            "createdAt",
-        ], include:  [{ model: Role },{ model: Address },{model: Teacher },{model: Student }] });
+        // Fetch the user with included related models
+        const user = await User.findOne({
+            where: { id: req.params.usersId },
+            attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+                "createdAt",
+            ],
+            include: [{ model: Role }, { model: Address }],
+            transaction
+        });
+
+        if (!user) {
+            await transaction.rollback();
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Fetch related student and teacher records
+        if (user.studentId) {
+            Students = await Student.findOne({
+                where: { id: user.studentId },
+                transaction
+            });
+        }
+
+        if (user.teacherId) {
+            Teachers = await Teacher.findOne({
+                where: { id: user.teacherId },
+                transaction
+            });
+        }
+
+        // Add related records to the user object if they exist
+        if (Teachers) {
+            user.dataValues.Teachers = [Teachers];
+        }
+        if (Students) {
+            user.dataValues.Students = [Students];
+        }
+
+        await transaction.commit();
+
         res.status(200).json({
-            users: users,
+            user: user,
             success: true,
-            message: "get one users by ID"
+            message: "Fetched user by ID successfully"
         });
     } catch (error) {
-        console.log(error)
-        res.status(400).json({
+        await transaction.rollback();
+        console.error(error);
+        res.status(500).json({
             error: error,
             success: false,
-            message: 'error in getting the users'
+            message: "Error in fetching the user"
         });
     }
-}
+};
 
 exports.findAll = async (req, res) => {
     try {
@@ -188,7 +229,7 @@ exports.findAll = async (req, res) => {
                 where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
             }
         } else {
-            if (loggedInUser.Role.Name == 'Super Admin') {
+            if (loggedInUser.Role.Name == 'Super Admin'||loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator") {
                 where = where;
             } else {
                 where = { assignToUsers: loggedInUserId };

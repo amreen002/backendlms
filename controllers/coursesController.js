@@ -299,63 +299,77 @@ exports.courseFindOne = async (req, res) => {
     try {
         transaction = await sequelize.transaction();
         let courseId = req.params.coursesId;
-        let coursesQuery = `
-    SELECT
-    courses.id,
-    courses.name,
-    courses.CourseDuration,
-    courses.CoursePrice,
-    courses.CourseCategoryId,
-    courses.userId,
-    courses.CourseCode,
-    courses.CourseUplod,
-    courses.Status,
-        courses.updatedAt,
-        courses.AboutCourse,
-        courses.Description,
-        COUNT(DISTINCT students.id) AS studentCount,
-        COUNT(DISTINCT batches.id) AS batchesCount,
-        COUNT(DISTINCT videos.id) AS videoCount,
-        COUNT(DISTINCT lessions.id) AS lessionCount,
-        JSON_ARRAYAGG(JSON_OBJECT('id', students.id, 'CoursesId', students.CoursesId, 'Name', students.Name)) AS students,
-        JSON_ARRAYAGG(JSON_OBJECT('id', batches.id, 'CoursesId', batches.CoursesId, 'Title', batches.Title)) AS batches,
-        JSON_OBJECT('id', categories.id, 'name', categories.name) AS category,
-        JSON_OBJECT('id', users.id, 'name', users.name) AS user,
-     JSON_ARRAYAGG(
-        JSON_OBJECT(
-            'id', topics.id, 
-            'name', topics.name, 
-            'CoursesId', topics.CoursesId,
-            'videos', (
-                SELECT JSON_ARRAYAGG(
-                    JSON_OBJECT(
-                        'id', videos.id,
-                        'Title', videos.Title,
-                        'CoursesId', videos.CoursesId,
-                        'TopicId', videos.TopicId,
-                        'VideoUplod', videos.VideoUplod,
-                        'VideoIframe', videos.VideoIframe
-                    )
-                ) 
-                FROM videos 
-                WHERE videos.TopicId = topics.id
-            )
-        )
-    ) AS topics,
-        JSON_ARRAYAGG(JSON_OBJECT('id', lessions.id, 'LessionTitle', lessions.LessionTitle, 'CoursesId', lessions.CoursesId,'TopicId',lessions.TopicId,'LessionUpload',lessions.LessionUpload)) AS lessions
-    FROM
-        courses
-LEFT JOIN students ON students.CoursesId = courses.id
-LEFT JOIN batches ON batches.CoursesId = courses.id
-       LEFT JOIN categories ON categories.id = courses.CourseCategoryId
-       LEFT JOIN users ON users.id = courses.userId
-LEFT JOIN topics ON topics.CoursesId = courses.id
-LEFT JOIN videos ON videos.CoursesId = courses.id
-LEFT JOIN lessions ON lessions.CoursesId = courses.id
-    WHERE  courses.id = :courseId
-    GROUP BY
-                courses.id, categories.id, users.id`;
 
+        // Define the corrected raw SQL query
+        let coursesQuery = `
+            SELECT
+                courses.id,
+                courses.name,
+                courses.CourseDuration,
+                courses.CoursePrice,
+                courses.CourseCategoryId,
+                courses.userId,
+                courses.CourseCode,
+                courses.CourseUplod,
+                courses.Status,
+                courses.updatedAt,
+                courses.AboutCourse,
+                courses.Description,
+                COUNT(DISTINCT students.id) AS studentCount,
+                COUNT(DISTINCT batches.id) AS batchesCount,
+                COUNT(DISTINCT videos.id) AS videoCount,
+                COUNT(DISTINCT lessions.id) AS lessionCount,
+                JSON_ARRAYAGG(JSON_OBJECT('id', students.id, 'CoursesId', students.CoursesId, 'Name', students.Name)) AS students,
+                JSON_ARRAYAGG(JSON_OBJECT('id', batches.id, 'CoursesId', batches.CoursesId, 'Title', batches.Title)) AS batches,
+                JSON_OBJECT('id', categories.id, 'name', categories.name) AS category,
+                JSON_OBJECT('id', users.id, 'name', users.name) AS user,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', topics.id, 
+                        'name', topics.name, 
+                        'CoursesId', topics.CoursesId,
+                        'videos', (
+                            SELECT JSON_ARRAYAGG(
+                                JSON_OBJECT(
+                                    'id', videos.id,
+                                    'Title', videos.Title,
+                                    'CoursesId', videos.CoursesId,
+                                    'TopicId', videos.TopicId,
+                                    'VideoUplod', videos.VideoUplod,
+                                    'VideoIframe', videos.VideoIframe
+                                )
+                            ) 
+                            FROM videos 
+                            WHERE videos.TopicId = topics.id
+                        ),
+                        'lessions', (
+                            SELECT JSON_ARRAYAGG(
+                                JSON_OBJECT(
+                                    'id', lessions.id,
+                                    'Title', lessions.LessionTitle,
+                                    'CoursesId', lessions.CoursesId,
+                                    'TopicId', lessions.TopicId,
+                                    'LessionUpload', lessions.LessionUpload
+                                )
+                            ) 
+                            FROM lessions 
+                            WHERE lessions.TopicId = topics.id
+                        )
+                    )
+                ) AS topics
+            FROM
+                courses
+            LEFT JOIN students ON students.CoursesId = courses.id
+            LEFT JOIN batches ON batches.CoursesId = courses.id
+            LEFT JOIN categories ON categories.id = courses.CourseCategoryId
+            LEFT JOIN users ON users.id = courses.userId
+            LEFT JOIN topics ON topics.CoursesId = courses.id
+            LEFT JOIN videos ON videos.CoursesId = courses.id
+            LEFT JOIN lessions ON lessions.CoursesId = courses.id
+            WHERE courses.id = :courseId
+            GROUP BY
+                courses.id, categories.id, users.id
+        `;
 
         // Execute the raw SQL query
 

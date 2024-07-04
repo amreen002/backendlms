@@ -1,9 +1,9 @@
 const express = require('express');
 let router = express.Router();
-let upload = require('../middlware/upload')
+let { uploadPDF, uploadImage, uploadVideo }  = require('../middlware/upload')
 let courses = require('../controllers/coursesController');
 let {checkauth,getLogedInUser} = require('../middlware/userAuth')
-router.post('/addcourses', checkauth, getLogedInUser,upload.single('file'), courses.create)
+router.post('/addcourses', checkauth, getLogedInUser,uploadImage.single('file'), courses.create)
 
 router.get('/listcourses', checkauth, getLogedInUser ,courses.findAll);
 
@@ -20,7 +20,7 @@ router.get('/batche/:coursecodeId', checkauth, getLogedInUser,courses.coursebatc
 
 router.get('/students/:coursecodeId',checkauth, getLogedInUser,courses.coursestudents);
 
-router.patch('/viewscourses/:coursesId', checkauth, getLogedInUser, upload.single('file'),courses.update);
+router.patch('/viewscourses/:coursesId', checkauth, getLogedInUser, uploadImage.single('file'),courses.update);
 
 router.delete('/deletecourses/:coursesId', checkauth, getLogedInUser, courses.delete);
 

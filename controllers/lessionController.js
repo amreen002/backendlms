@@ -6,13 +6,20 @@ const user = require('../models/user');
 exports.create = async (req, res) => {
     try {
 
+        
+       let imge = []
+        for(var i=0;i<req.files.length;i++){
+            imge.push(req.files[i].path)
+        } 
+        console.log(imge)
          let data = {
             LessionTitle:req.body.LessionTitle,
             CoursesId:req.body.CoursesId,
             TopicId:req.body.TopicId,
             userId : req.profile.id,
-            LessionUpload:req.file.path
+            LessionUpload:imge
          }
+         console.log(imge)
         const lession = await Lession.create(data)
 
         return res.status(200).json({
