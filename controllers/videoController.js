@@ -1,15 +1,26 @@
 
 
 const { Video, Courses, Topic, Categories, sequelize } = require('../models')
+const path =  require("path");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
+        let videos = [];
+        for (let index = 0; index < req.files.length; index++) {
+            console.log( req.files)
+            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+            videos.push({
+            path: req.files[index].path,
+            name: originalNameWithoutExtension,
+          });
+        }
+
         let data = {
             Title: req.body.Title,
             CoursesId: req.body.CoursesId,
             TopicId: req.body.TopicId,
             userId : req.profile.id,
-            VideoUplod: req.file.path,
+            VideoUplod: videos,
             VideoIframe: req.body.VideoIframe,
         }
 
@@ -37,8 +48,7 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const userId = req.profile.id
-        const video = await Video.findOne({ where: { id: req.params.videoId, userId}, include: [{ model: Courses, include: [{ model: Topic }] }] });
+        const video = await Video.findOne({ where: { id: req.params.videoId}, include: [{ model: Courses, include: [{ model: Topic }] }] });
         res.status(200).json({
             video: video,
             success: true,
@@ -81,13 +91,21 @@ exports.update = async (req, res) => {
             return res.status(404).json({ message: 'Existing Video Path not found' });
         }
 
+        let videos = [];
+        for (let index = 0; index < req.files.length; index++) {
+            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+            videos.push({
+            path: req.files[index].path,
+            name: originalNameWithoutExtension,
+          });
+        }
 
         let data = {
             Title: req.body.Title,
             CoursesId: req.body.CoursesId,
             TopicId: req.body.TopicId,
             userId : req.profile.id,
-            VideoUplod: req.file ? req.file.path :existingVideoPath.VideoUplod,
+            VideoUplod: req.files ? videos :existingVideoPath.VideoUplod,
             VideoIframe: req.body.VideoIframe,
         }
         let video = await Video.update(data, { where: { id: req.params.videoId } });

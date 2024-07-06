@@ -90,9 +90,9 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const roleId =req.profile.id
-        const students = await Student.findOne({ where: { id: req.params.studentsId ,roleId:roleId}, 
-            include: [{ model: User, include: [{ model: Role }] }, { model: Courses },
+        const students = await Student.findOne({ where: 
+            { id: req.params.studentsId}, attributes: { exclude: ['Password'] },
+            include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Courses },
             { model: Batch,  include: [{model: Teacher,}]}], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             students: students,
@@ -148,8 +148,9 @@ exports.findAll = async (req, res) => {
 
         let students = await Student.findAll({
             where,
+            attributes: { exclude: ['Password'] },
             include: [{
-                model: User, include:
+                model: User,include:
                     [{ model: Role }]
             },
             { model: Address },
@@ -222,10 +223,10 @@ exports.update = async (req, res) => {
             userName: updatedStudent.Username,
             phoneNumber: updatedStudent.PhoneNumber,
             email: updatedStudent.Email,
-            password: user.password, // Assuming password should not change, or retrieve it from user record
-            departmentId: 3, // Assuming departmentId 3 corresponds to 'Instructor'
+            departmentId: 4, // Assuming departmentId 3 corresponds to 'Instructor'
             roleName: "Admin",
-            teacherId: updatedStudent.id,
+            studentId: updatedStudent.id,
+            teacherId: 0,
             AddressableId: updatedStudent.AddressableId,
         };
 

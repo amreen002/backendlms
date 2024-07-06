@@ -2,24 +2,26 @@
 const { Op } = require('sequelize')
 const path =  require("path");
 const { Lession, Role, User ,Batch, Topic ,Courses,Categories} = require('../models');
-const user = require('../models/user');
 exports.create = async (req, res) => {
     try {
 
         
-       let imge = []
-        for(var i=0;i<req.files.length;i++){
-            imge.push(req.files[i].path)
-        } 
-        console.log(imge)
+        let images = [];
+        for (let index = 0; index < req.files.length; index++) {
+            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+          images.push({
+            path: req.files[index].path,
+            name: originalNameWithoutExtension,
+          });
+        }
+
          let data = {
             LessionTitle:req.body.LessionTitle,
             CoursesId:req.body.CoursesId,
             TopicId:req.body.TopicId,
             userId : req.profile.id,
-            LessionUpload:imge
+            LessionUpload:images
          }
-         console.log(imge)
         const lession = await Lession.create(data)
 
         return res.status(200).json({
@@ -80,14 +82,23 @@ exports.update = async (req, res) => {
     try {
         const exitedpath = await Lession.findOne({ where: { id: req.params.lessionId } });
         if (!exitedpath.LessionUpload) {
-            
+            return res.status(404).json({ message: 'Existing Lission Path not found' });
         }
+        let uploadPDF = [];
+        for (let index = 0; index < req.files.length; index++) {
+            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+            uploadPDF.push({
+            path: req.files[index].path,
+            name: originalNameWithoutExtension,
+          });
+        }
+
         let data = {
             LessionTitle:req.body.LessionTitle,
             CoursesId:req.body.CoursesId,
             TopicId:req.body.TopicId,
             userId : req.profile.id,
-            LessionUpload:req.file?req.file.path :exitedpath.LessionUpload,
+            LessionUpload:req.files ? uploadPDF :exitedpath.LessionUpload,
          }
         const lession = await Lession.update(data, { where: { id: req.params.lessionId } });
         res.status(200).json({

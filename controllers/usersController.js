@@ -31,11 +31,20 @@ exports.create = async (req, res) => {
         let password = req.body.password;
         let roleWiseUsers
         let updateusers;
-        let departmentRoleName = await Role.findOne({ where: { id: req.body.departmentId } })
-        if (departmentRoleName.Name == 'Admin' || departmentRoleName.Name == 'Instructor' || departmentRoleName.Name == 'Student' || departmentRoleName.Name == 'Guest/Viewer' || departmentRoleName.Name == 'Sale Department' || departmentRoleName.Name == 'Telecaller Department' || departmentRoleName.Name == 'Front Desk' || departmentRoleName.Name == 'Receptions Desk' || departmentRoleName.Name == 'Counselor Department' || departmentRoleName.Name == 'Account Department') {
-            roleWiseUsers = 'Admin';
-        } else if (departmentRoleName.Name == 'Telecaller Team') {
-            roleWiseUsers = 'Sub Admin';
+
+     
+        const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
+        if (!departmentRole) {
+          await transaction.rollback();
+          return res.status(404).json({ message: 'Department role not found' });
+        }
+    
+        if (['Admin', 'Instructor','Administrator' ,'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+          roleWiseUsers = 'Admin';
+        } else if (departmentRole.Name === 'Telecaller Team') {
+          roleWiseUsers = 'Sub Admin';
+        } else {
+          roleWiseUsers = 'User';
         }
         /* Users create */
         let data = {
@@ -77,7 +86,10 @@ exports.create = async (req, res) => {
                 Username:users.userName,
                 PhoneNumber:users.phoneNumber,
                 roleId: req.profile.id,  
-                AddressableId:address.id
+                AddressableId:address.id,
+                DOB:req.body.DOB,
+                TeacherType:req.body.TeacherType,
+                YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
             };
             const teacher = await Teacher.create(teacherData,{transaction});
             await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -94,7 +106,10 @@ exports.create = async (req, res) => {
                 Username:users.userName,
                 PhoneNumber:users.phoneNumber,
                 roleId:req.profile.id, 
-                AddressableId:address.id
+                AddressableId:address.id,
+                CoursesId:req.body.CoursesId,
+                Date:req.body.Date,
+                BatchId:req.body.BatchId,
             };
            const students = await Student.create(studentData,{transaction});
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -186,7 +201,7 @@ exports.findOne = async (req, res) => {
         await transaction.commit();
 
         res.status(200).json({
-            user: user,
+            users: user,
             success: true,
             message: "Fetched user by ID successfully"
         });
@@ -287,7 +302,7 @@ exports.update = async (req, res) => {
         return res.status(404).json({ message: 'Department role not found' });
       }
   
-      if (['Admin', 'Instructor', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+      if (['Admin', 'Instructor','Administrator' ,'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
         roleWiseUsers = 'Admin';
       } else if (departmentRole.Name === 'Telecaller Team') {
         roleWiseUsers = 'Sub Admin';
@@ -311,12 +326,19 @@ exports.update = async (req, res) => {
       await User.update(data, { where: { id: req.params.usersId }, transaction });
   
       let address = await Address.findOne({ where: { AddressableId: req.params.usersId }, transaction });
+      
       if (!address) {
         req.body.AddressableId = existingUser.id;
         req.body.AddressableType = 'Users';
         address = await Address.create(req.body, { transaction });
         await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
-      } else {
+      } else if(existingUser.AddressableId===null){
+        req.body.AddressableId = existingUser.id;
+        req.body.AddressableType = 'Users';
+        address = await Address.create(req.body, { transaction });
+        await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
+      }
+       else {
         req.body.AddressableId = existingUser.id;
         req.body.AddressableType = 'Update Users';
         await Address.update(req.body, { where: { id: address.id }, transaction });
@@ -335,13 +357,13 @@ exports.update = async (req, res) => {
           TeacherType: 'Online',
           Username: updatedUser.userName,
           PhoneNumber: updatedUser.phoneNumber,
-          roleId: req.profile.id,
           AddressableId: updatedUser.AddressableId,
           DOB:req.body.DOB,
           TeacherType:req.body.TeacherType,
           YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
         };
-        const teacher = await Teacher.update(teacherData, { where: { roleId: updatedUser.id }, order: [['updatedAt', 'DESC']], transaction });
+            
+        const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
       }
   
@@ -352,13 +374,12 @@ exports.update = async (req, res) => {
           Password: updatedUser.password,
           Username: updatedUser.userName,
           PhoneNumber: updatedUser.phoneNumber,
-          roleId:req.profile.id,
           AddressableId: updatedUser.AddressableId,
           CoursesId:req.body.CoursesId,
           Date:req.body.Date,
           BatchId:req.body.BatchId,
         };
-        const student = await Student.update(studentData, { where: { roleId: updatedUser.id }, order: [['updatedAt', 'DESC']], transaction });
+        const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
       }
   

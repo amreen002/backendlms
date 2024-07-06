@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
      },
     VideoUplod: { 
       field: 'VideoUplod', 
-      type: DataTypes.STRING
+      type: DataTypes.JSON
      },
     VideoIframe: { 
       field: 'VideoIframe', 

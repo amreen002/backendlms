@@ -108,11 +108,26 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     let transaction;
-    let userId = req.profile.id
     try {
             // Start a transaction
             transaction = await sequelize.transaction();
+            let where;
+            let userId = req.profile.id;
     
+            const loggedInUser = await User.findOne({
+                where: { id: userId },
+                attributes: [
+                    "id", "name", "userName", "phoneNumber", "email", "assignToUsers",
+                    "departmentId", "teacherId", "studentId", "roleName", "image",
+                    "src", "address", "message", "active"
+                ],
+                include: [{ model: Role }]
+            });
+            if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin")
+                where = "1=1"; // Always true condi
+            else {
+                where = "courses.userId = :userId";
+            }
        // SQL Query
        let coursesQuery = `
        SELECT
@@ -148,7 +163,7 @@ exports.findAll = async (req, res) => {
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, name FROM topics) topics ON topics.CoursesId = courses.id
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, Title, TopicId, VideoUplod, VideoIframe FROM videos) videos ON videos.CoursesId = courses.id
        LEFT JOIN ( SELECT DISTINCT CoursesId, id, LessionTitle, TopicId, LessionUpload FROM lessions) lessions ON lessions.CoursesId = courses.id
-       WHERE  courses.userId = :userId
+       WHERE  ${where}
        GROUP BY
            courses.id, categories.id, users.id`;
 
@@ -206,6 +221,13 @@ exports.findAllCourse = async (req, res) => {
     try {
             // Start a transaction
       transaction = await sequelize.transaction();
+      let searching = "1=1"; // Default condition to ensure query is valid
+      if (req.query.search) {
+        const search = req.query.search;
+        searching = `courses.name LIKE '%${search}%'   OR topics.name LIKE '%${search}%'  OR lessions.LessionTitle LIKE '%${search}%' `;
+      }
+        
+    
     
        // SQL Query
        let coursesQuery = `
@@ -227,12 +249,12 @@ exports.findAllCourse = async (req, res) => {
            COUNT(DISTINCT videos.id) AS videoCount,
            COUNT(DISTINCT lessions.id) AS lessionCount,
            JSON_ARRAYAGG(JSON_OBJECT('id', students.id, 'Name', students.Name)) AS Students,
-           JSON_ARRAYAGG( JSON_OBJECT('id', batches.id, 'Title', batches.Title)) AS Batches,
-           JSON_OBJECT('id', categories.id, 'name', categories.name ) AS Category,
-           JSON_OBJECT('id', users.id, 'name', users.name ) AS User,
-           JSON_ARRAYAGG( JSON_OBJECT('id', topics.id, 'name', topics.name)) AS Topics,
-           JSON_ARRAYAGG( JSON_OBJECT('id', videos.id, 'Title', videos.Title, 'TopicId', videos.TopicId, 'VideoUplod', videos.VideoUplod, 'VideoIframe', videos.VideoIframe)) AS Videos,
-           JSON_ARRAYAGG( JSON_OBJECT('id', lessions.id, 'LessionTitle', lessions.LessionTitle, 'TopicId', lessions.TopicId, 'LessionUpload', lessions.LessionUpload)) AS Lessions
+           JSON_ARRAYAGG(JSON_OBJECT('id', batches.id, 'Title', batches.Title)) AS Batches,
+           JSON_OBJECT('id', categories.id, 'name', categories.name) AS Category,
+           JSON_OBJECT('id', users.id, 'name', users.name) AS User,
+           JSON_ARRAYAGG(JSON_OBJECT('id', topics.id, 'name', topics.name)) AS Topics,
+           JSON_ARRAYAGG(JSON_OBJECT('id', videos.id, 'Title', videos.Title, 'TopicId', videos.TopicId, 'VideoUplod', videos.VideoUplod, 'VideoIframe', videos.VideoIframe)) AS Videos,
+           JSON_ARRAYAGG(JSON_OBJECT('id', lessions.id, 'LessionTitle', lessions.LessionTitle, 'TopicId', lessions.TopicId, 'LessionUpload', lessions.LessionUpload)) AS Lessions
        FROM
            courses
        LEFT JOIN (SELECT DISTINCT CoursesId, id, Name FROM students) students ON students.CoursesId = courses.id

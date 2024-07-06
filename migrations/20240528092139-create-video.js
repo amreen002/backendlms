@@ -23,11 +23,15 @@ module.exports = {
       },
       VideoUplod: {
         field: 'VideoUplod', 
-        type: Sequelize.STRING
+        type: Sequelize.JSON
       },
       VideoIframe: {
         field: 'VideoIframe', 
         type: Sequelize.STRING
+      },
+      userId:{
+        field: 'userId',
+        type: Sequelize.INTEGER
       },
       createdAt: {
         allowNull: false,

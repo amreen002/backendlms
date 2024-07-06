@@ -23,8 +23,7 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const userId = req.profile.id;
-        const categories = await Categories.findOne({ where: { id: req.params.categoriesId,userId: userId},include: [{ model: User }] });
+        const categories = await Categories.findOne({ where: { id: req.params.categoriesId},include: [{ model: User }] });
         res.status(200).json({
             categories: categories,
             success: true,

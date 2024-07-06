@@ -48,7 +48,6 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const userId = req.profile.id;
         let batchs = await Batch.findOne({ where: { id: req.params.batchesId }, include: [{ model: User, include: [{ model: Role }] }, { model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             batchs: batchs,
@@ -99,7 +98,7 @@ exports.findAll = async (req, res) => {
                 "active",
             ], include: [{ model: Role }]
         });
-        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin")
             where = {}
         else {
             where = { userId: loggedInUserId }

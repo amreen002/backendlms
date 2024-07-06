@@ -84,7 +84,7 @@ exports.create = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId}, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
+        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId},attributes: { exclude: ['Password'] }, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -138,7 +138,7 @@ exports.findAll = async (req, res) => {
         else {
             where = { roleId: loggedInUserId }
         }
-        let teachers = await Teacher.findAll({where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
+        let teachers = await Teacher.findAll({where, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -196,11 +196,13 @@ exports.update = async (req, res) => {
             req.body.AddressableId = user.id;
             req.body.AddressableType = "Instructor";
             await Address.update(req.body, { where: { id: addressusers.id }, transaction });
+        }else{
+            req.body.AddressableId = req.params.teachersId;
+            req.body.AddressableType = "Instructor";
+            await Address.update(req.body, { where: { id: address.id }, transaction });
+    
         }
-        req.body.AddressableId = req.params.teachersId;
-        req.body.AddressableType = "Instructor";
-        await Address.update(req.body, { where: { id: address.id }, transaction });
-
+        
        
         const updatedAddress = await Address.findOne({ where: { id: address }, transaction });
 
@@ -209,10 +211,10 @@ exports.update = async (req, res) => {
             userName: updatedTeacher.Username,
             phoneNumber: updatedTeacher.PhoneNumber,
             email: updatedTeacher.Email,
-            password: user.password, // Assuming password should not change, or retrieve it from user record
             departmentId: 3, // Assuming departmentId 3 corresponds to 'Instructor'
             roleName: "Admin",
             teacherId: updatedTeacher.id,
+            studentId: 0,
             AddressableId: updatedTeacher.AddressableId,
         };
 

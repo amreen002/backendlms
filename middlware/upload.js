@@ -7,7 +7,9 @@ const pdfStorage = multer.diskStorage({
         cb(null, './uploads/documents');
     },
     filename: function (req, file, cb) {
-        cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+        const timestamp = new Date().toISOString().replace(/:/g, '-');
+        const originalName = file.originalname;
+        cb(null, `${timestamp}-${originalName}`);
     }
 });
 
@@ -25,7 +27,9 @@ const videoStorage = multer.diskStorage({
         cb(null, './uploads/videos');
     },
     filename: function (req, file, cb) {
-        cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+        const timestamp = new Date().toISOString().replace(/:/g, '-');
+        const originalName = file.originalname;
+        cb(null, `${timestamp}-${originalName}`);
     }
 });
 
@@ -56,7 +60,7 @@ const videoFilter = function (req, file, cb) {
 const uploadPDF = multer({ 
     storage: pdfStorage,
     limits: {
-        fileSize: 1024*1024*10
+        fileSize: 1024*1024*10 // 10 MB
     },
     fileFilter: pdfFilter
 });
