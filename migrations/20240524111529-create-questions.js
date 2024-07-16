@@ -15,7 +15,7 @@ module.exports = {
       },
       Type: {
         field: 'Type',
-        type: Sequelize.ENUM('Easy','Medium','Hard')
+        type: Sequelize.ENUM('Number of Easy Questions (1 Mark)','Number of Medium Questions (2 Mark)','Number of Hard Questions (4 Mark)')
       },
       QuizzeId:{
         field: 'QuizzeId',
@@ -48,6 +48,10 @@ module.exports = {
       userId:{
         field: 'userId',
         type: Sequelize.INTEGER
+      },
+      studentId:{
+        field: 'studentId',
+        type: Sequelize.JSON
       },
       createdAt: {
         allowNull: false,

@@ -44,7 +44,7 @@ const LessionRouter = require('./routers/LessionRouter');
 const VideoRouter = require('./routers/VideoRouter');
 const QuestionsRouter = require('./routers/QuestionsRouter');
 const QuestionCategoriesRouter = require('./routers/QuestionCategoriesRouter');
-
+const StutenetQuizeRouter = require('./routers/StutenetQuizeRouter');
 // Serve static files from public folder
 app.use(express.static('public'));
 
@@ -68,7 +68,7 @@ app.use('/api', LessionRouter);
 app.use('/api', VideoRouter);
 app.use('/api', QuestionsRouter);
 app.use('/api', QuestionCategoriesRouter);
-
+app.use('/api', StutenetQuizeRouter);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the API'); // Replace with your desired response

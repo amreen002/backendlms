@@ -1,10 +1,11 @@
 
-const { CategoriesQuestion,Role ,User} = require('../models')
+const { CategoriesQuestion,Role ,User,sequelize} = require('../models')
 exports.create = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         req.body.userId = req.profile.id;
-        const questionscategory = await CategoriesQuestion.create(req.body)
-
+        const questionscategory = await CategoriesQuestion.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             questionscategory: questionscategory,
             success: true,
@@ -12,6 +13,7 @@ exports.create = async (req, res) => {
         })
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
@@ -22,8 +24,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const questionscategory = await CategoriesQuestion.findOne({ where: { id: req.params.questionscategoryId }});
+        const questionscategory = await CategoriesQuestion.findOne({ where: { id: req.params.questionscategoryId },transaction});
+        await transaction.commit(); 
         res.status(200).json({
             questionscategory: questionscategory,
             success: true,
@@ -31,6 +35,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -40,9 +45,11 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         let where={}
-        let questionscategory = await CategoriesQuestion.findAll({where});
+        let questionscategory = await CategoriesQuestion.findAll({where, transaction});
+        await transaction.commit();
         res.status(200).json({
             questionscategory: questionscategory,
             success: true,
@@ -50,6 +57,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -59,15 +67,18 @@ exports.findAll = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         req.body.userId = req.profile.id;
-        const questionscategory = await CategoriesQuestion.update(req.body, { where: { id: req.params.questionscategoryId } });
+        const questionscategory = await CategoriesQuestion.update(req.body, { where: { id: req.params.questionscategoryId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             questionscategory: questionscategory,
             success: true,
             message: "Update Successfully Categories Question"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -78,14 +89,17 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const questionscategory = await CategoriesQuestion.destroy({ where: { id: req.params.questionscategoryId } });
+        const questionscategory = await CategoriesQuestion.destroy({ where: { id: req.params.questionscategoryId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             questionscategory: questionscategory,
             success: true,
             message: "Delete Successfully Categories Question"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

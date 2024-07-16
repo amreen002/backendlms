@@ -50,7 +50,7 @@ module.exports = {
       userId: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'users',
+          model: 'User',
           key: 'id'
         },
         onDelete: 'NO ACTION',

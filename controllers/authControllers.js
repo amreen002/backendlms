@@ -10,8 +10,9 @@ exports.login = async (req, res) => {
 
         const password = req.body.password;
         const username = req.body.email
+
         const users = await User.findOne({ where: { email: username }, include: [{ model: Role },{ model: Teacher },{ model: Student }] })
-      
+
 	  if (!users) {
             return res.status(400).json({
                 success: false,
@@ -309,7 +310,7 @@ exports.update = async (req, res) => {
     } catch (error) {
       console.error('Error while updating user:', error);
       await transaction.rollback();
-      res.status(400).json({
+      res.status(500).json({
         error: error,
         success: false,
         message: 'Error while updating the user',
@@ -376,7 +377,7 @@ exports.forgotPassword = async (req, res) => {
         })
 
     } catch (error) {
-        return res.status(400).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to reset Password.",
             error: error
@@ -437,7 +438,7 @@ exports.newPassword = async (req, res) => {
 
     }
     catch (error) {
-        return res.status(404).json({
+        return res.status(500).json({
             message: "Invalid Otp"
 
         })

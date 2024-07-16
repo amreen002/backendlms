@@ -1,10 +1,11 @@
 
-const { Categories,Role ,User} = require('../models')
+const { Categories,Role ,User,sequelize} = require('../models')
 exports.create = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         req.body.userId = req.profile.id;
-        const categories = await Categories.create(req.body)
-
+        const categories = await Categories.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             categories: categories,
             success: true,
@@ -12,6 +13,7 @@ exports.create = async (req, res) => {
         })
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
@@ -22,8 +24,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const categories = await Categories.findOne({ where: { id: req.params.categoriesId},include: [{ model: User }] });
+        const categories = await Categories.findOne({ where: { id: req.params.categoriesId},include: [{ model: User }] ,transaction});
+        await transaction.commit();
         res.status(200).json({
             categories: categories,
             success: true,
@@ -31,6 +35,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -40,9 +45,11 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        let where={userId:req.profile.id}
-        let categories = await Categories.findAll({where,include: [{ model: User,include: [{ model: Role }] }]});
+        let where={ }
+        let categories = await Categories.findAll({where,include: [{ model: User,include: [{ model: Role }] }],transaction});
+        await transaction.commit();
         res.status(200).json({
             categories: categories,
             success: true,
@@ -50,6 +57,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -59,15 +67,18 @@ exports.findAll = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         req.body.userId = req.profile.id;
-        const categories = await Categories.update(req.body, { where: { id: req.params.categoriesId } });
+        const categories = await Categories.update(req.body, { where: { id: req.params.categoriesId },transaction });
+        await transaction.commit();
         res.status(200).json({
             categories: categories,
             success: true,
             message: "Update Successfully Categories"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -78,14 +89,17 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const categories = await Categories.destroy({ where: { id: req.params.categoriesId } });
+        const categories = await Categories.destroy({ where: { id: req.params.categoriesId },transaction });
+        await transaction.commit();
         res.status(200).json({
             categories: categories,
             success: true,
             message: "Delete Successfully Categories"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

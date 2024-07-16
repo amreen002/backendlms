@@ -8,7 +8,7 @@ router.get('/topic',checkauth, getLogedInUser, topic.findAll);
 
 router.get('/topic/:topicId', checkauth, getLogedInUser,topic.findOne);
 
-router.put('/topic/:topicId', checkauth, getLogedInUser, topic.update);
+router.patch('/topic/:topicId', checkauth, getLogedInUser, topic.update);
 
 router.delete('/topic/:topicId', checkauth, getLogedInUser, topic.delete);
 

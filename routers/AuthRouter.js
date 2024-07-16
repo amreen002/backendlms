@@ -20,7 +20,7 @@ router.post('/signup',uploadImage.single('file'), users.signup)
 
 router.get('/signup/:usersId',users.findOne);
 
-router.put('/signup/:usersId',uploadImage.single('file'),users.update);
+router.patch('/signup/:usersId',uploadImage.single('file'),users.update);
 
 router.post('/logout', users.signout)
 

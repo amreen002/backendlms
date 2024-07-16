@@ -13,6 +13,8 @@ module.exports = (sequelize, DataTypes) => {
       this.belongsTo(models.User, { foreignKey: 'userId' });
       this.belongsTo(models.Quize, { foreignKey: 'QuizzeId' });
       this.belongsTo(models.CategoriesQuestion, { foreignKey: 'CategoryId' });
+      this.belongsTo(models.Student, { foreignKey: 'studentId' });
+      this.hasMany(models.StudentQuize, { foreignKey: 'QuestionId' });
     }
   }
   Questions.init({
@@ -22,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     Type: {
       field: 'Type',
-      type: DataTypes.ENUM('Easy','Medium','Hard')
+      type: DataTypes.ENUM('Number of Easy Questions (1 Mark)','Number of Medium Questions (2 Mark)','Number of Hard Questions (4 Mark)')
     },
     QuizzeId:{
       field: 'QuizzeId',
@@ -56,6 +58,11 @@ module.exports = (sequelize, DataTypes) => {
       field: 'userId',
       type: DataTypes.INTEGER
     },
+    studentId:{
+      field: 'studentId',
+      type: DataTypes.JSON
+    },
+   
     
   }, {
     sequelize,

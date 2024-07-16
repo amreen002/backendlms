@@ -1,7 +1,8 @@
 
 const { Op } = require('sequelize');
-const { Role, UserPermissionRoles } = require('../models')
+const { Role, UserPermissionRoles,sequelize } = require('../models')
 exports.create = async (req, res) => {
+    const transaction = await sequelize.transaction()
     try {
 
         let userPermission = [];
@@ -15,11 +16,11 @@ exports.create = async (req, res) => {
                     Delete: req.body.userPermission[i].Delete,
                   /*   fullAccess: req.body.userPermission[i].fullAccess, */
                 }
-                let accessUserPermissions = await UserPermissionRoles.create(userpermissiondetails);
+                let accessUserPermissions = await UserPermissionRoles.create(userpermissiondetails,{transaction});
                 userPermission.push(accessUserPermissions);
             }
         }
-
+        await transaction.commit();
         return res.status(200).json({
             accessUserPermissions: accessUserPermissions,
             success: true,
@@ -27,6 +28,7 @@ exports.create = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        await transaction.rollback();
         return res.status(500).json({
             error: error.message,
             success: false,
@@ -36,8 +38,10 @@ exports.create = async (req, res) => {
 };
 
 exports.findOne = async (req, res) => {
+    const transaction = await sequelize.transaction()
     try {
-        const userpermission = await UserPermissionRoles.findOne({ where: { id: req.params.roleId } });
+        const userpermission = await UserPermissionRoles.findOne({ where: { id: req.params.roleId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             userpermission: userpermission,
             success: true,
@@ -45,7 +49,8 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
-        res.status(400).json({
+        await transaction.rollback();
+        res.status(500).json({
             error: error,
             success: false,
             message: 'error in getting the User Permission Department'
@@ -54,8 +59,10 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    const transaction = await sequelize.transaction()
     try {
-        let userpermission = await UserPermissionRoles.findAll({include: [  { model: Role }]})
+        let userpermission = await UserPermissionRoles.findAll({include: [  { model: Role }],transaction})
+        await transaction.commit();
         res.status(200).json({
             userpermission: userpermission,
             success: true,
@@ -63,7 +70,8 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        res.status(400).json({
+        await transaction.rollback();
+        res.status(500).json({
             error: error,
             success: false,
             message: "Failed to retrieve data"
@@ -72,15 +80,18 @@ exports.findAll = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
+    const transaction = await sequelize.transaction()
     try {
-        const userpermission = await UserPermissionRoles.update(req.body, { where: { id: req.params.userpermissionId } });
+        const userpermission = await UserPermissionRoles.update(req.body, { where: { id: req.params.userpermissionId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             userpermission: userpermission,
             success: true,
             message: "Update Successfully User Permission Department"
         });
     } catch (error) {
-        res.status(400).json({
+        await transaction.rollback();
+        res.status(500).json({
             error: error,
             success: false,
             message: "error  While Update The User Permission Department"
@@ -90,15 +101,18 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    const transaction = await sequelize.transaction()
     try {
-        const userpermission = await UserPermissionRoles.destroy({ where: { id: req.params.userpermissionId } });
+        const userpermission = await UserPermissionRoles.destroy({ where: { id: req.params.userpermissionId },transaction });
+        await transaction.commit();
         res.status(200).json({
             userpermission: userpermission,
             success: true,
             message: "Delete Successfully User Permission Department"
         });
     } catch (error) {
-        res.status(400).json({
+        await transaction.rollback();
+        res.status(500).json({
             error: error,
             success: false,
             message: 'User Permission Department  not found'

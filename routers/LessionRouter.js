@@ -9,7 +9,7 @@ router.get('/lession', checkauth, getLogedInUser, lession.findAll);
 
 router.get('/lession/:lessionId', checkauth, getLogedInUser,lession.findOne);
 
-router.put('/lession/:lessionId', checkauth, getLogedInUser,uploadPDF.array('files'), lession.update);
+router.patch('/lession/:lessionId', checkauth, getLogedInUser,uploadPDF.array('files'), lession.update);
 
 router.delete('/lession/:lessionId', checkauth, getLogedInUser, lession.delete);
 

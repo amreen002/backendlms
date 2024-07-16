@@ -10,7 +10,7 @@ router.get('/batches', batches.findAllUsers);
 
 router.get('/listbatches/:batchesId', checkauth, getLogedInUser,batches.findOne);
 
-router.put('/viewsbatches/:batchesId', checkauth, getLogedInUser, batches.update);
+router.patch('/viewsbatches/:batchesId', checkauth, getLogedInUser, batches.update);
 
 router.delete('/deletebatches/:batchesId', checkauth, getLogedInUser, batches.delete);
 

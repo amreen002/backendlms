@@ -8,7 +8,7 @@ router.get('/questionscategory', checkauth, getLogedInUser, questionscategory.fi
 
 router.get('/questionscategory/:questionscategoryId', checkauth, getLogedInUser, questionscategory.findOne);
 
-router.put('/questionscategory/:questionscategoryId', checkauth, getLogedInUser, questionscategory.update);
+router.patch('/questionscategory/:questionscategoryId', checkauth, getLogedInUser, questionscategory.update);
 
 router.delete('/questionscategory/:questionscategoryId', checkauth, getLogedInUser, questionscategory.delete);
 

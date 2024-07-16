@@ -8,7 +8,7 @@ router.get('/listuserpermission',checkauth, getLogedInUser, UserPermission.findA
 
 router.get('/listuserpermission/:userpermissionId', checkauth, getLogedInUser,UserPermission.findOne);
 
-router.put('/viewsuserpermission/:userpermissionId', checkauth, getLogedInUser, UserPermission.update);
+router.patch('/viewsuserpermission/:userpermissionId', checkauth, getLogedInUser, UserPermission.update);
 
 router.delete('/deleteuserpermission/:userpermissionId', checkauth, getLogedInUser, UserPermission.delete);
 

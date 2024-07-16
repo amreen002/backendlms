@@ -52,7 +52,7 @@ const cleanUpArrayFields = (data) => {
 };
 
 exports.create = async (req, res) => {
-    let transaction = await sequelize.transaction();
+    const transaction = await sequelize.transaction();
     try {
         let data = {
             name: req.body.name,
@@ -64,6 +64,7 @@ exports.create = async (req, res) => {
             AboutCourse: req.body.AboutCourse,
             Description: req.body.Description,
         }
+        console.log(req.body)
         let courses = await Courses.create(data, { transaction })
         const CourseCode = await generateEnquiryId(courses.id);
         await Courses.update(
@@ -74,7 +75,7 @@ exports.create = async (req, res) => {
         return res.status(200).json({
             courses: courses,
             success: true,
-            message: "Courses Created SuccessFully"
+            message: "Class Created SuccessFully"
         })
     } catch (error) {
         console.log(error)
@@ -82,26 +83,29 @@ exports.create = async (req, res) => {
         return res.status(500).json({
             error: error,
             success: false,
-            message: "Courses error"
+            message: "Class error"
         })
     }
 
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const courses = await Courses.findOne({ where: { id: req.params.coursesId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Student }], order: [['updatedAt', 'DESC']] });
+        const courses = await Courses.findOne({ where: { id: req.params.coursesId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Student }], order: [['updatedAt', 'DESC']],transaction });
+        await transaction.commit();
         res.status(200).json({
             courses: courses,
             success: true,
-            message: "get one Courses by ID"
+            message: "get one Class by ID"
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
-            message: 'error in getting the Front Desk'
+            message: 'error in getting the Class'
         });
     }
 }
@@ -480,9 +484,10 @@ exports.courseFindOne = async (req, res) => {
 
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         const courseId = req.params.coursesId;
-        let course = await Courses.findOne({ where: { id: courseId }, order: [['updatedAt', 'DESC']] });
+        let course = await Courses.findOne({ where: { id: courseId }, order: [['updatedAt', 'DESC']],transaction });
         if (!course.CourseUpload) {
             return res.status(404).json({ message: 'Existing Class Upload not found' });
         }
@@ -498,39 +503,42 @@ exports.update = async (req, res) => {
         };
 
         // Update the course
-        await Courses.update(updatedData, { where: { id: courseId }, order: [['updatedAt', 'DESC']] });
+        await Courses.update(updatedData, { where: { id: courseId }, order: [['updatedAt', 'DESC']] ,transaction});
 
-
+        await transaction.commit();
         res.status(200).json({
             course: course,
             success: true,
-            message: "Course updated successfully"
+            message: "Class updated successfully"
         });
     } catch (error) {
         console.error(error);
-
+        await transaction.rollback();
         res.status(500).json({
-            error: error.message || "An error occurred while updating the course",
+            error: error.message || "An error occurred while updating the Class",
             success: false,
-            message: "Error while updating the course"
+            message: "Error while updating the Class"
         });
     }
 };
 
 
 exports.delete = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const courses = await Courses.destroy({ where: { id: req.params.coursesId } });
+        const courses = await Courses.destroy({ where: { id: req.params.coursesId },transaction });
+        await transaction.commit();
         res.status(200).json({
             courses: courses,
             success: true,
-            message: "Delete Successfully Courses"
+            message: "Delete Successfully Class"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
-            message: 'Courses not found'
+            message: 'Class not found'
         });
     }
 }
@@ -538,29 +546,31 @@ exports.delete = async (req, res) => {
 exports.addcontentcourses = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
-        const courses = await Courses.put({ where: { id: req.params.coursesId }, transaction });
+        const courses = await Courses.patch({ where: { id: req.params.coursesId }, transaction });
         if (courses) {
             await Topic.create(req.body, { where: { CoursesId: courses }, transaction })
             await Lession.create(req.body, { where: { CoursesId: courses }, transaction })
             await Video.create(req.body, { where: { CoursesId: courses }, transaction })
         }
 
-
+        await transaction.commit();
         res.status(200).json({
             courses: courses,
             success: true,
-            message: "Successfully Courses Content"
+            message: "Successfully Class Content"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
-            message: 'Courses Content not found'
+            message: 'Class Content not found'
         });
     }
 }
 
 exports.coursecode = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         let courseCode = req.params.coursecodeId;
 
@@ -604,6 +614,7 @@ exports.coursecode = async (req, res) => {
         // Execute the raw SQL query
         let courses = await sequelize.query(coursesQuery, {
             type: sequelize.QueryTypes.SELECT,
+            transaction,
             replacements: { courseCode: courseCode }
         });
 
@@ -616,7 +627,7 @@ exports.coursecode = async (req, res) => {
             totalStudentCount += parseInt(course.studentCount, 10) || 0;
             totalBatchesCount += parseInt(course.batchesCount, 10) || 0;
         });
-
+        await transaction.commit();
         res.status(200).json({
             courses: courses,
             coursescount: courses.length,
@@ -627,6 +638,7 @@ exports.coursecode = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -635,6 +647,7 @@ exports.coursecode = async (req, res) => {
     }
 };
 exports.coursestudents = async (req, res) => {
+    let transaction = await sequelize.transaction();
     let courseId = req.params.coursecodeId;
 
     try {
@@ -647,9 +660,10 @@ exports.coursestudents = async (req, res) => {
             { model: Courses },
             { model: Batch, include: [{ model: Teacher, }] },
             ],
-            order: [['updatedAt', 'DESC']]
+            order: [['updatedAt', 'DESC']],
+            transaction
         })
-
+        await transaction.commit();
         res.status(200).json({
             courses: coursesbatch,
             success: true,
@@ -657,6 +671,7 @@ exports.coursestudents = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -665,12 +680,16 @@ exports.coursestudents = async (req, res) => {
     }
 }
 exports.coursebatches = async (req, res) => {
+    let transaction = await sequelize.transaction();
     let courseId = req.params.coursecodeId;
 
     try {
         let coursesbatch = await Batch.findAll({
-            where: { CoursesId: courseId }, include: [{ model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']]
+            where: { CoursesId: courseId }, include: [{ model: Teacher }, { model: Courses }], order: [['updatedAt', 'DESC']],
+            transaction
+
         })
+        await transaction.commit();
         res.status(200).json({
             courses: coursesbatch,
             success: true,
@@ -678,6 +697,7 @@ exports.coursebatches = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

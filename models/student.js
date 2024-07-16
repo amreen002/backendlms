@@ -17,6 +17,8 @@ module.exports = (sequelize, DataTypes) => {
       this.belongsTo(models.User, { foreignKey: 'roleId' });
       this.belongsTo(models.Courses, { foreignKey: 'CoursesId' });
       this.belongsTo(models.Batch, { foreignKey: 'BatchId' });
+      this.hasMany(models.Questions, { foreignKey: 'studentId' });
+      this.hasMany(models.StudentQuize, { as: 'StudentQuizes', foreignKey: 'StudentId' });
     }
   }
   Student.init({
@@ -64,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
       field: 'BatchId',
       type: DataTypes.INTEGER,
     },
-
+  
 
   }, {
     sequelize,

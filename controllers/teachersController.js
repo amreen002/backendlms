@@ -5,9 +5,11 @@ const { Teacher, User, Role, Address, sequelize } = require('../models'); // Adj
 
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
+    console.log(req.file)
     const { Password, Name, LastName, AddressableId, Email, DOB, TeacherType, Username, PhoneNumber, YourIntroducationAndSkills } = req.body;
 
     try {
+      
         if (!Password) {
             throw new Error('Password is required');
         }
@@ -55,7 +57,9 @@ exports.create = async (req, res) => {
             assignToUsers: req.profile.id,
             departmentId: 3,
             roleName: "Admin",
-            AddressableId: address.id
+            AddressableId: address.id,
+            image: req.file ? req.file.filename : null,
+            src: req.file ? req.file.path : null,
         };
 
         const user = await User.create(userData, { transaction });
@@ -83,8 +87,11 @@ exports.create = async (req, res) => {
 
 
 exports.findOne = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId},attributes: { exclude: ['Password'] }, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] });
+        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId},attributes: { exclude: ['Password'] }, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']],transaction });
+        await transaction.commit();
+
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -92,6 +99,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -101,6 +109,7 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         /*      const searchTerm = req.query.searchTerm;
              if (searchTerm) {
@@ -131,14 +140,17 @@ exports.findAll = async (req, res) => {
                 "address",
                 "message",
                 "active",
-            ], include: [{ model: Role }]
+            ], include: [{ model: Role }],
+            transaction
+
         });
         if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
             where = {}
         else {
             where = { roleId: loggedInUserId }
         }
-        let teachers = await Teacher.findAll({where, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] })
+        let teachers = await Teacher.findAll({where, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] ,transaction})
+        await transaction.commit();
         res.status(200).json({
             teachers: teachers,
             success: true,
@@ -146,6 +158,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -216,6 +229,8 @@ exports.update = async (req, res) => {
             teacherId: updatedTeacher.id,
             studentId: 0,
             AddressableId: updatedTeacher.AddressableId,
+            image: req.file ? req.file.filename : user.image,
+            src: req.file ? req.file.path : user.src,
         };
 
         await User.update(updatedUserData, { where: { id: user.id }, transaction });
@@ -240,14 +255,17 @@ exports.update = async (req, res) => {
 
 
 exports.delete = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const teachers = await Teacher.destroy({ where: { id: req.params.teachersId } });
+        const teachers = await Teacher.destroy({ where: { id: req.params.teachersId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             teachers: teachers,
             success: true,
             message: "Delete Successfully Teachers"
         });
-    } catch (error) {
+    } catch (error) { 
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

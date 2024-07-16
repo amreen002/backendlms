@@ -3,9 +3,11 @@ const { Op } = require('sequelize');
 const { CouselingDepartment, FrontDesk, User, Role, Address, Courses,Countries, Staties, Cities, sequelize } = require('../models')
 
 exports.create = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
      /*    req.body.roleId =req.profile.id; */
-        const counselordepartment = await CouselingDepartment.create(req.body)
+        const counselordepartment = await CouselingDepartment.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             counselordepartment: counselordepartment,
             success: true,
@@ -13,6 +15,7 @@ exports.create = async (req, res) => {
         })
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
@@ -23,8 +26,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const counselordepartment = await CouselingDepartment.findOne({ where: { id: req.params.counselordepartmentId } ,include: [{ model: User, include: [{ model: Role }] }, { model: Address },{ model: Courses }],order: [['updatedAt', 'DESC']]});
+        const counselordepartment = await CouselingDepartment.findOne({ where: { id: req.params.counselordepartmentId } ,include: [{ model: User, include: [{ model: Role }] }, { model: Address },{ model: Courses }],order: [['updatedAt', 'DESC']],transaction});
+        await transaction.commit(); 
         res.status(200).json({
             counselordepartment: counselordepartment,
             success: true,
@@ -32,6 +37,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -41,6 +47,7 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         let where={}
         const searchTerm = req.query.searchTerm;
@@ -54,7 +61,8 @@ exports.findAll = async (req, res) => {
         }
   
 
-        let counselordepartment = await CouselingDepartment.findAll({where, include: [{ model: User, include: [{ model: Role }] }, { model: Address },{ model: Courses }], order: [['updatedAt', 'DESC']] })
+        let counselordepartment = await CouselingDepartment.findAll({where, include: [{ model: User, include: [{ model: Role }] }, { model: Address },{ model: Courses }], order: [['updatedAt', 'DESC']],transaction })
+        await transaction.commit(); 
         res.status(200).json({
             counselordepartment: counselordepartment,
             success: true,
@@ -62,6 +70,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -71,15 +80,17 @@ exports.findAll = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-   /*      req.body.roleId =req.profile.id; */
-        const counselordepartment = await CouselingDepartment.update(req.body, { where: { id: req.params.counselordepartmentId },order: [['updatedAt', 'DESC']] });
+        const counselordepartment = await CouselingDepartment.update(req.body, { where: { id: req.params.counselordepartmentId },order: [['updatedAt', 'DESC']] },transaction);
+        await transaction.commit(); 
         res.status(200).json({
             counselordepartment: counselordepartment,
             success: true,
             message: "Update Successfully Counselor Department"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -90,14 +101,17 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const counselordepartment = await CouselingDepartment.destroy({ where: { id: req.params.counselordepartmentId } });
+        const counselordepartment = await CouselingDepartment.destroy({ where: { id: req.params.counselordepartmentId },transaction });
+        await transaction.commit(); 
         res.status(200).json({
             counselordepartment: counselordepartment,
             success: true,
             message: "Delete Successfully Counselor Department"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

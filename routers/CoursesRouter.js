@@ -3,7 +3,12 @@ let router = express.Router();
 let { uploadPDF, uploadImage, uploadVideo }  = require('../middlware/upload')
 let courses = require('../controllers/coursesController');
 let {checkauth,getLogedInUser} = require('../middlware/userAuth')
-router.post('/addcourses', checkauth, getLogedInUser,uploadImage.single('file'), courses.create)
+
+const classes  = require('../validations/classvalidator');
+
+const validations = require('../validations/validator');
+
+router.post('/addcourses', checkauth,getLogedInUser,classes.classValidator,validations.validate,uploadImage.single('file'),courses.create)
 
 router.get('/listcourses', checkauth, getLogedInUser ,courses.findAll);
 
@@ -24,6 +29,6 @@ router.patch('/viewscourses/:coursesId', checkauth, getLogedInUser, uploadImage.
 
 router.delete('/deletecourses/:coursesId', checkauth, getLogedInUser, courses.delete);
 
-router.put('/addcontentcourses/:coursesId', checkauth, getLogedInUser, courses.addcontentcourses);
+router.patch('/addcontentcourses/:coursesId', checkauth, getLogedInUser, courses.addcontentcourses);
 
 module.exports = router;

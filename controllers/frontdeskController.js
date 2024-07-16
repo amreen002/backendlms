@@ -94,8 +94,10 @@ exports.create = async (req, res) => {
 };
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const frontdesk = await FrontDesk.findOne({ where: { id: req.params.frontdeskId }, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] });
+        const frontdesk = await FrontDesk.findOne({ where: { id: req.params.frontdeskId }, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] ,transaction});
+        await transaction.commit(); 
         res.status(200).json({
             frontdesk: frontdesk,
             success: true,
@@ -103,6 +105,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -112,6 +115,7 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
         let where = {}
         const search = req.query.search;
@@ -123,9 +127,9 @@ exports.findAll = async (req, res) => {
                 ],
             };
         }
-        let frontdesk = await FrontDesk.findAll({ where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] })
+        let frontdesk = await FrontDesk.findAll({ where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] ,transaction})
 
-
+        await transaction.commit();
         res.status(200).json({
             frontdesk: frontdesk,
             success: true,
@@ -133,6 +137,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -202,14 +207,18 @@ exports.update = async (req, res) => {
 
 
 exports.delete = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const frontdesk = await FrontDesk.destroy({ where: { id: req.params.frontdeskId } });
+        const frontdesk = await FrontDesk.destroy({ where: { id: req.params.frontdeskId } ,transaction});
+        await transaction.commit();
+
         res.status(200).json({
             frontdesk: frontdesk,
             success: true,
             message: "Delete Successfully Front Desk"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -219,8 +228,10 @@ exports.delete = async (req, res) => {
 }
 
 exports.country = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        let country = await Countries.findAll({ include: [{ model: Staties, include: [{ model: Cities }] }] });
+        let country = await Countries.findAll({ include: [{ model: Staties, include: [{ model: Cities }] }] ,transaction});
+        await transaction.commit();
         res.status(200).json({
             country: country,
             success: true,
@@ -228,6 +239,7 @@ exports.country = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

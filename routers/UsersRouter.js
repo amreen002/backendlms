@@ -11,7 +11,7 @@ router.get('/users',checkauth, getLogedInUser,/* checkReadPermission */users.fin
 
 router.get('/users/:usersId' ,checkauth, getLogedInUser,users.findOne);
 
-router.put('/users/:usersId', checkauth, getLogedInUser,uploadImage.single('file'),users.update);
+router.patch('/users/:usersId', checkauth, getLogedInUser,uploadImage.single('file'),users.update);
 
 router.delete('/users/:usersId',checkauth, getLogedInUser, users.delete);
 

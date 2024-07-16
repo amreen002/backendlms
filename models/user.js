@@ -32,7 +32,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING
     },
     phoneNumber: {
-      type: DataTypes.BIGINT
+      type: DataTypes.BIGINT,
+      defaultValue:0
     },
     email: {
       type: DataTypes.STRING

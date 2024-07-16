@@ -38,7 +38,7 @@ module.exports = {
 
 
     user = await User.findOne({ where, include: [{ model: Role, where: { name: 'Super Admin' } }] });
-    let CoureseArray = ['Courses Look For', 'Advanced Digital Marketing Course', 'Professional Digital Marketing Course', '45 Days Digital Marketing Course', 'Web Development Course', 'Python Language Course', 'Data Analytics Course', 'Data Science Course', 'App Development Course', 'Ethical Hacking Course']
+    let CoureseArray = ['Class 1st', 'Class 2nd', 'Class 3rd', 'Class 4th', 'Class 5th', 'Class 6th', 'Class 7th', 'Class 8th','Class 9th','Class 10th','Class 11th','Class 12th']
     let courses
     for (let index = 0; index < CoureseArray.length; index++) {
       courses = await queryInterface.bulkInsert('courses', [{

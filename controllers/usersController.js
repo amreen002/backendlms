@@ -392,7 +392,7 @@ exports.update = async (req, res) => {
     } catch (error) {
       console.error('Error while updating user:', error);
       await transaction.rollback();
-      res.status(400).json({
+      res.status(500).json({
         error: error,
         success: false,
         message: 'Error while updating the user',
@@ -409,7 +409,7 @@ exports.delete = async (req, res) => {
             message: "Delete Successfully users"
         });
     } catch (error) {
-        res.status(400).json({
+        res.status(500).json({
             error: error,
             success: false,
             message: 'users not found'
@@ -426,7 +426,7 @@ exports.rolefindAll = async (req, res) => {
             message: "get Data Successfully Roles"
         });
     } catch (error) {
-        res.status(400).json({
+        res.status(500).json({
             error: error,
             success: false,
             message: 'Roles not found'

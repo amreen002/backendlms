@@ -1,10 +1,13 @@
 
 const { Op } = require('sequelize');
-const { SaleTeam, User } = require('../models')
+const { SaleTeam, User ,sequelize } = require('../models')
 exports.create = async (req, res) => {
+    let transaction = await sequelize.transaction()
     try {
      /*    req.body.roleId =req.profile.id; */
-        const saleteam = await SaleTeam.create(req.body)
+
+        const saleteam = await SaleTeam.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             saleteam: saleteam,
             success: true,
@@ -12,6 +15,7 @@ exports.create = async (req, res) => {
         })
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
@@ -22,8 +26,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction()
     try {
-        const saleteam = await SaleTeam.findOne({ where: { id: req.params.saleteamId } ,order: [['updatedAt', 'DESC']]});
+        const saleteam = await SaleTeam.findOne({ where: { id: req.params.saleteamId } ,order: [['updatedAt', 'DESC']],transaction});
+        await transaction.commit();
         res.status(200).json({
             saleteam: saleteam,
             success: true,
@@ -31,6 +37,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -40,6 +47,7 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction()
     try {
         const searchTerm = req.query.searchTerm;
         if (searchTerm) {
@@ -52,7 +60,8 @@ exports.findAll = async (req, res) => {
         }
   
 
-        let saleteam = await SaleTeam.findAll({order: [['updatedAt', 'DESC']]})
+        let saleteam = await SaleTeam.findAll({order: [['updatedAt', 'DESC']],transaction});
+        await transaction.commit();
         res.status(200).json({
             saleteam: saleteam,
             success: true,
@@ -60,6 +69,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error);
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -69,15 +79,18 @@ exports.findAll = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction()
     try {
-        const saleteam = await SaleTeam.update(req.body, { where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']] });
-        const sale = await SaleTeam.findOne({ where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']] });
+        const saleteam = await SaleTeam.update(req.body, { where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']] ,transaction});
+        const sale = await SaleTeam.findOne({ where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']],transaction });
+        await transaction.commit();
         res.status(200).json({
             saleteam: sale,
             success: true,
             message: "Update Successfully Sale Team "
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

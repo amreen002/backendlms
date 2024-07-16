@@ -16,7 +16,8 @@ module.exports = {
         type: Sequelize.STRING
       },
       phoneNumber: {
-        type: Sequelize.BIGINT
+        type: Sequelize.BIGINT,
+        defaultValue:0
       },
       email: {
         type: Sequelize.STRING

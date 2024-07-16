@@ -1,6 +1,6 @@
 
 
-const { Video, Courses, Topic, Categories, sequelize } = require('../models')
+const { Video, Courses, Topic, Categories, sequelize ,User,Role} = require('../models')
 const path =  require("path");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
@@ -47,8 +47,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const video = await Video.findOne({ where: { id: req.params.videoId}, include: [{ model: Courses, include: [{ model: Topic }] }] });
+        const video = await Video.findOne({ where: { id: req.params.videoId}, include: [{ model: Courses, include: [{ model: Topic }] }],transaction });
+        await transaction.commit();
         res.status(200).json({
             video: video,
             success: true,
@@ -56,6 +58,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -65,10 +68,38 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        let where = {userId :req.profile.id}
-        let video = await Video.findAll({ where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }] });
+        let where;
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }],
+            transaction
 
+        });
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
+            where = {}
+        else {
+            where = { roleId: loggedInUserId }
+        }
+        let video = await Video.findAll({ where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }],transaction });
+        await transaction.commit();
         res.status(200).json({
             video: video,
             success: true,
@@ -76,6 +107,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -85,8 +117,9 @@ exports.findAll = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-       let existingVideoPath = await Video.findOne({ where: {  id: req.params.videoId} });
+       let existingVideoPath = await Video.findOne({ where: {  id: req.params.videoId} ,transaction});
         if (!existingVideoPath.VideoUplod) {
             return res.status(404).json({ message: 'Existing Video Path not found' });
         }
@@ -108,7 +141,8 @@ exports.update = async (req, res) => {
             VideoUplod: req.files ? videos :existingVideoPath.VideoUplod,
             VideoIframe: req.body.VideoIframe,
         }
-        let video = await Video.update(data, { where: { id: req.params.videoId } });
+        let video = await Video.update(data, { where: { id: req.params.videoId },transaction });
+        await transaction.commit();
         res.status(200).json({
             video: video,
             success: true,
@@ -116,6 +150,7 @@ exports.update = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -126,14 +161,17 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    let transaction = await sequelize.transaction();
     try {
-        const video = await Video.destroy({ where: { id: req.params.videoId } });
+        const video = await Video.destroy({ where: { id: req.params.videoId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             video: video,
             success: true,
             message: "Delete Successfully Video"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,

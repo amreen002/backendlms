@@ -8,7 +8,7 @@ router.get('/listrole',checkauth, getLogedInUser, role.findAll);
 
 router.get('/listrole/:roleId', checkauth, getLogedInUser,role.findOne);
 
-router.put('/viewsrole/:roleId', checkauth, getLogedInUser, role.update);
+router.patch('/viewsrole/:roleId', checkauth, getLogedInUser, role.update);
 
 router.delete('/deleterole/:roleId', checkauth, getLogedInUser, role.delete);
 

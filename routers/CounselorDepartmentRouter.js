@@ -8,7 +8,7 @@ router.get('/listcounselordepartment',checkauth, getLogedInUser, counselordepart
 
 router.get('/listcounselordepartment/:counselordepartmentId', checkauth, getLogedInUser,counselordepartment.findOne);
 
-router.put('/viewscounselordepartment/:counselordepartmentId', checkauth, getLogedInUser, counselordepartment.update);
+router.patch('/viewscounselordepartment/:counselordepartmentId', checkauth, getLogedInUser, counselordepartment.update);
 
 router.delete('/deletecounselordepartment/:counselordepartmentId', checkauth, getLogedInUser, counselordepartment.delete);
 

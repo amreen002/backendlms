@@ -8,7 +8,7 @@ router.get('/listtelecallerteam', TelecallerTeam.findAll);
 router.get('/usertelecallerteam',checkauth, getLogedInUser, TelecallerTeam.TeamFindAll);
 router.get('/listtelecallerteam/:telecallerteamId',TelecallerTeam.findOne);
 
-router.put('/updatetelecallerteam/:telecallerteamId',TelecallerTeam.update);
+router.patch('/updatetelecallerteam/:telecallerteamId',TelecallerTeam.update);
 
 router.delete('/deletesaleteam/:telecallerteamId', TelecallerTeam.delete);
 

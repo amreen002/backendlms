@@ -1,10 +1,11 @@
 
-const { TelecallerDepartment, SaleTeam,Role ,User} = require('../models')
+const { TelecallerDepartment, SaleTeam,Role ,User,sequelize} = require('../models')
 exports.create = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
       
-        const telecallerdepartment = await TelecallerDepartment.create(req.body)
-
+        const telecallerdepartment = await TelecallerDepartment.create(req.body,{transaction})
+        await transaction.commit();
         return res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
@@ -12,6 +13,7 @@ exports.create = async (req, res) => {
         })
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         return res.status(500).json({
             error: error,
             success: false,
@@ -22,8 +24,10 @@ exports.create = async (req, res) => {
 }
 
 exports.findOne = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const telecallerdepartment = await TelecallerDepartment.findOne({ where: { id: req.params.telecallerteamId },include: [{ model: User }] });
+        const telecallerdepartment = await TelecallerDepartment.findOne({ where: { id: req.params.telecallerteamId },include: [{ model: User }], transaction})
+        await transaction.commit();
         res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
@@ -31,6 +35,7 @@ exports.findOne = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -40,9 +45,11 @@ exports.findOne = async (req, res) => {
 }
 
 exports.findAll = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         let where={}
-        let telecallerdepartment = await TelecallerDepartment.findAll({where,include: [{ model: User,include: [{ model: Role }] }]});
+        let telecallerdepartment = await TelecallerDepartment.findAll({where,include: [{ model: User,include: [{ model: Role }] }],transaction});
+        await transaction.commit();
         res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
@@ -50,6 +57,7 @@ exports.findAll = async (req, res) => {
         });
     } catch (error) {
         console.log(error)
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -59,14 +67,17 @@ exports.findAll = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const telecallerdepartment = await TelecallerDepartment.update(req.body, { where: { id: req.params.telecallerteamId } });
+        const telecallerdepartment = await TelecallerDepartment.update(req.body, { where: { id: req.params.telecallerteamId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
             message: "Update Successfully Telecaller Team "
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -77,14 +88,17 @@ exports.update = async (req, res) => {
 }
 
 exports.delete = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const telecallerdepartment = await TelecallerDepartment.destroy({ where: { id: req.params.telecallerteamId } });
+        const telecallerdepartment = await TelecallerDepartment.destroy({ where: { id: req.params.telecallerteamId } ,transaction});
+        await transaction.commit();
         res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
             message: "Delete Successfully Telecaller Department"
         });
     } catch (error) {
+        await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
@@ -95,19 +109,22 @@ exports.delete = async (req, res) => {
 
 
 exports.TeamFindAll = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         const roleId = req.profile.id;
-        const department = await SaleTeam.findOne({ where: { roleId: roleId }, include: [{ model: User,include: [{ model: Role }]  }] });
+        const department = await SaleTeam.findOne({ where: { roleId: roleId }, include: [{ model: User,include: [{ model: Role }]  }],transaction });
         if (!department) {
+            await transaction.rollback();
             return res.status(404).json({
                 success: false,
                 message: "Telecaller Department not found"
             });
         } 
         const usertelecallerteam = await SaleTeam.findAll({ 
-            where: { roleId: department.roleId, telecallerPersonName: "Allotted" }, include: [{ model: User ,include: [{ model: Role }]}]
+            where: { roleId: department.roleId, telecallerPersonName: "Allotted" }, include: [{ model: User ,include: [{ model: Role }]}],
+            transaction
         });
-
+        await transaction.commit();
         res.status(200).json({
             usertelecallerteam: usertelecallerteam,
             success: true,
@@ -115,6 +132,7 @@ exports.TeamFindAll = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        await transaction.rollback();
         res.status(500).json({
             success: false,
             error: error.message,

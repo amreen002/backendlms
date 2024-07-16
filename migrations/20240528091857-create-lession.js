@@ -25,6 +25,10 @@ module.exports = {
         field: 'LessionUpload', 
         type: Sequelize.JSON,
       },
+      userId:{
+        field: 'userId',
+        type: Sequelize.INTEGER
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
