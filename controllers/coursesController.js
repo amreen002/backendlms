@@ -128,7 +128,7 @@ exports.findAll = async (req, res) => {
                 include: [{ model: Role }]
             });
             if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin")
-                where = "1=1"; // Always true condi
+            where = "1=1"; // Always true condi
             else {
                 where = "courses.userId = :userId";
             }
@@ -231,6 +231,7 @@ exports.findAllCourse = async (req, res) => {
         searching = `courses.name LIKE '%${search}%'   OR topics.name LIKE '%${search}%'  OR lessions.LessionTitle LIKE '%${search}%' `;
       }
         
+      
     
     
        // SQL Query

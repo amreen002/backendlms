@@ -8,6 +8,10 @@ router.get('/quizze',checkauth, getLogedInUser ,quizze.findAll);
 
 router.get('/quizze/:quizzeId', checkauth, getLogedInUser,quizze.findOne);
 
+router.get('/quizzeandquesation/:quizzeId/:questionId', checkauth, getLogedInUser,quizze.QuestionWisefindOne);
+
+router.patch('/quizzeandquesation/:quizzeId/:questionId', checkauth, getLogedInUser,quizze.QuestionWiseUpdate);
+
 router.patch('/quizze/:quizzeId', checkauth, getLogedInUser, quizze.update);
 
 router.delete('/quizze/:quizzeId', checkauth, getLogedInUser, quizze.delete);

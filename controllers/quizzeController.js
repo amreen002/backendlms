@@ -1,5 +1,6 @@
 
-const { Quize, Role, User, Categories, Teacher, Batch, sequelize, Questions,Courses,Student} = require('../models')
+const { Op, fn, col } = require('sequelize');
+const { Quize, Role, User, Categories, Teacher, Batch, sequelize, Questions,Courses,Student,CategoriesQuestion} = require('../models')
 
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
@@ -39,7 +40,7 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
-        const quizze = await Quize.findOne({ where: { id: req.params.quizzeId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Batch }], transaction });
+        const quizze = await Quize.findOne({ where: { id: req.params.quizzeId }, include: [{ model: User, include: [{ model: Role }] }, { model: Categories }, { model: Batch },{ model: Questions }], transaction });
         await transaction.commit();
         res.status(200).json({
             quizze: quizze,
@@ -56,6 +57,38 @@ exports.findOne = async (req, res) => {
         });
     }
 }
+exports.QuestionWisefindOne = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const quizzeandquesation = await Questions.findAll({
+            where: {
+                QuizzeId:req.params.quizzeId,id:req.params.questionId,
+            },
+            include: [
+                { model: CategoriesQuestion },
+                { model: Quize }
+            ],
+            transaction
+        });
+
+        await transaction.commit();
+
+        res.status(200).json({
+            quesations: quizzeandquesation,
+            success: true,
+            message: "Get one Quizze and Questions by ID"
+        });
+    } catch (error) {
+        console.log(error);
+        await transaction.rollback();
+
+        res.status(500).json({
+            error: error.message,
+            success: false,
+            message: 'Error in getting the Quizze'
+        });
+    }
+};
 
 exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction();
@@ -150,6 +183,7 @@ exports.update = async (req, res) => {
             message: "Update Successfully Quizze"
         });
     } catch (error) {
+        console.log(error)
         await transaction.rollback();
         res.status(500).json({
             error: error,
@@ -158,6 +192,27 @@ exports.update = async (req, res) => {
         });
     }
 
+}
+
+exports.QuestionWiseUpdate = async (req, res) => {
+    let transaction;
+    try {
+        transaction = await sequelize.transaction();
+        await Questions.update(req.body, { where: { QuizzeId: req.params.quizzeId,id: req.params.questionId}, transaction });
+        await transaction.commit();
+        res.status(200).json({
+            success: true,
+            message: "Update Successfully Quizze"
+        });
+    } catch (error) {
+        console.log(error);
+        if (transaction) await transaction.rollback();
+        res.status(500).json({
+            error: error.message,
+            success: false,
+            message: "Error While Updating The Quizze"
+        });
+    }
 }
 
 exports.delete = async (req, res) => {

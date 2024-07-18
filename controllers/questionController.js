@@ -46,7 +46,17 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
+        let Students;
         const questions = await Questions.findOne({ where: { id: req.params.questionId }, include: [{ model: CategoriesQuestion }, { model: Quize }], transaction });
+        if (questions.studentId) {
+            Students = await Student.findAll({
+                where: { id: questions.studentId },
+                transaction
+            });
+        }
+        if (Students) {
+            questions.dataValues.Students = Students;
+        }
         await transaction.commit();
         res.status(200).json({
             questions: questions,
