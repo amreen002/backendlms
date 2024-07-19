@@ -66,7 +66,9 @@ module.exports = (sequelize, DataTypes) => {
       field: 'BatchId',
       type: DataTypes.INTEGER,
     },
-  
+    image: {
+      type: DataTypes.STRING
+    },
 
   }, {
     sequelize,

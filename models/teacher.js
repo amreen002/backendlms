@@ -63,6 +63,13 @@ module.exports = (sequelize, DataTypes) => {
       field: 'roleId',
       type: DataTypes.INTEGER
     },
+    CousesId: {
+      field: 'CousesId',
+      type: DataTypes.INTEGER
+    },
+    image: {
+      type: DataTypes.STRING
+    },
   }, {
     sequelize,
     modelName: 'Teacher',

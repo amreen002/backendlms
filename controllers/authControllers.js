@@ -95,7 +95,8 @@ exports.signup = async (req, res) => {
                 TeacherType:"Online",
                 Username:users.userName,
                 PhoneNumber:users.phoneNumber,
-                roleId: users.id,  
+                roleId: users.id,
+                image:users.image,
             };
             const teacher = await Teacher.create(teacherData,{transaction});
             await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -108,6 +109,7 @@ exports.signup = async (req, res) => {
                 Username:users.userName,
                 PhoneNumber:users.phoneNumber,
                 roleId:users.id, 
+                image:users.image
             };
            const students = await Student.create(studentData,{transaction});
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -121,6 +123,7 @@ exports.signup = async (req, res) => {
                     Username:users.userName,
                     PhoneNumber:users.phoneNumber,
                     roleId:users.id, 
+                    image:users.image
                 };
                const students = await Student.create(studentData,{transaction});
                 await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -134,6 +137,7 @@ exports.signup = async (req, res) => {
                     Username:users.userName,
                     PhoneNumber:users.phoneNumber,
                     roleId: users.id,  
+                    image:users.image,
                 };
                 const teacher = await Teacher.create(teacherData,{transaction});
                 await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -304,7 +308,9 @@ exports.update = async (req, res) => {
           AddressableId: updatedUser.AddressableId,
           DOB:req.body.DOB,
           TeacherType:req.body.TeacherType,
+          CousesId:req.body.CousesId,
           YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+          image:updatedUser.image
         };
         const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
@@ -322,6 +328,7 @@ exports.update = async (req, res) => {
           CoursesId:req.body.CoursesId,
           Date:req.body.Date,
           BatchId:req.body.BatchId,
+          image:updatedUser.image
         };
         const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
@@ -355,6 +362,7 @@ exports.update = async (req, res) => {
                 DOB:req.body.DOB,
                 TeacherType:req.body.TeacherType,
                 YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+                CousesId:req.body.CousesId,
               };
               const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
               await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
