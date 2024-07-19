@@ -8,7 +8,7 @@ const classes  = require('../validations/classvalidator');
 
 const validations = require('../validations/validator');
 
-router.post('/addcourses', checkauth,getLogedInUser,classes.classValidator,validations.validate,uploadImage.single('file'),courses.create)
+router.post('/addcourses', checkauth,getLogedInUser,/* classes.classValidator,validations.validate, */uploadImage.single('file'),courses.create)
 
 router.get('/listcourses', checkauth, getLogedInUser ,courses.findAll);
 
@@ -16,6 +16,7 @@ router.get('/courses',courses.findAllCourse);
 
 router.get('/courses/:coursesId',courses.courseFindOne);
 
+router.get('/studentcourses', checkauth, getLogedInUser ,courses.findAllCourseStudent);
 
 router.get('/listcourses/:coursesId', checkauth, getLogedInUser,courses.findOne);
 

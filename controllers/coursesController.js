@@ -64,7 +64,6 @@ exports.create = async (req, res) => {
             AboutCourse: req.body.AboutCourse,
             Description: req.body.Description,
         }
-        console.log(req.body)
         let courses = await Courses.create(data, { transaction })
         const CourseCode = await generateEnquiryId(courses.id);
         await Courses.update(
@@ -321,6 +320,123 @@ exports.findAllCourse = async (req, res) => {
     
     
 };
+
+exports.findAllCourseStudent = async (req, res) => {
+    let transaction;
+    try {
+        // Start a transaction
+        transaction = await sequelize.transaction();
+
+        let where = {};
+        const loggedInUser = await Student.findOne({
+            where,
+            attributes: { exclude: ['Password'] },
+            include: [{
+                model: User,
+                include: [{ model: Role }]
+            }],
+        });
+
+        let condition = "1=1"; // Default condition to ensure query is valid
+        let replacements = {};
+
+        if (loggedInUser.User.Role.Name === "Student") {
+            condition = `courses.id = :id`;
+            replacements.id = loggedInUser.CoursesId;
+        }
+
+        let searching = "";
+        if (req.query.search) {
+            const search = req.query.search;
+            searching = `AND (courses.name LIKE '%${search}%' OR topics.name LIKE '%${search}%' OR lessons.LessonTitle LIKE '%${search}%')`;
+        }
+
+        // SQL Query
+        let coursesQuery = `
+       SELECT
+           courses.id,
+           courses.name,
+           courses.CourseDuration,
+           courses.CoursePrice,
+           courses.CourseCategoryId,
+           courses.userId,
+           courses.CourseCode,
+           courses.CourseUplod,
+           courses.Status,
+           courses.updatedAt,
+           courses.AboutCourse,
+           courses.Description,
+           COUNT(DISTINCT students.id) AS studentCount,
+           COUNT(DISTINCT batches.id) AS batchesCount,
+           COUNT(DISTINCT videos.id) AS videoCount,
+           COUNT(DISTINCT lessions.id) AS lessionCount,
+           JSON_ARRAYAGG(JSON_OBJECT('id', students.id, 'Name', students.Name)) AS Students,
+           JSON_ARRAYAGG(JSON_OBJECT('id', batches.id, 'Title', batches.Title)) AS Batches,
+           JSON_OBJECT('id', categories.id, 'name', categories.name) AS Category,
+           JSON_OBJECT('id', users.id, 'name', users.name) AS User,
+           JSON_ARRAYAGG(JSON_OBJECT('id', topics.id, 'name', topics.name)) AS Topics,
+           JSON_ARRAYAGG(JSON_OBJECT('id', videos.id, 'Title', videos.Title, 'TopicId', videos.TopicId, 'VideoUplod', videos.VideoUplod, 'VideoIframe', videos.VideoIframe)) AS Videos,
+           JSON_ARRAYAGG(JSON_OBJECT('id', lessions.id, 'LessionTitle', lessions.LessionTitle, 'TopicId', lessions.TopicId, 'LessionUpload', lessions.LessionUpload)) AS Lessions
+       FROM
+           courses
+       LEFT JOIN (SELECT DISTINCT CoursesId, id, Name FROM students) students ON students.CoursesId = courses.id
+       LEFT JOIN (SELECT DISTINCT CoursesId, id, Title FROM batches) batches ON batches.CoursesId = courses.id
+       LEFT JOIN categories ON categories.id = courses.CourseCategoryId
+       LEFT JOIN users ON users.id = courses.userId
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, name FROM topics) topics ON topics.CoursesId = courses.id
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, Title, TopicId, VideoUplod, VideoIframe FROM videos) videos ON videos.CoursesId = courses.id
+       LEFT JOIN ( SELECT DISTINCT CoursesId, id, LessionTitle, TopicId, LessionUpload FROM lessions) lessions ON lessions.CoursesId = courses.id
+      WHERE ${condition} ${searching}
+       GROUP BY
+            courses.id, categories.id, users.id`;
+
+        // Execute the raw SQL query
+        let courses = await sequelize.query(coursesQuery, {
+            type: sequelize.QueryTypes.SELECT,
+            transaction,
+            replacements
+        });
+
+        // Clean up array fields
+        courses = courses.map(course => cleanUpArrayFields(course));
+
+        // Initialize total counts
+        let totalStudentCount = 0;
+        let totalBatchesCount = 0;
+        let totalVideoCount = 0;
+        let totalLessionCount = 0;
+
+        // Sum the student and batch counts
+        courses.forEach(course => {
+            totalStudentCount += parseInt(course.studentCount, 10) || 0;
+            totalBatchesCount += parseInt(course.batchesCount, 10) || 0;
+            totalVideoCount += parseInt(course.videoCount, 10) || 0;
+            totalLessionCount += parseInt(course.lessionCount, 10) || 0;
+        });
+        await transaction.commit();
+        res.status(200).json({
+            courses: courses,
+            coursescount: courses.length,
+            totalStudentCount: totalStudentCount,
+            totalBatchesCount: totalBatchesCount,
+            totalVideoCount: totalVideoCount,
+            totalLessionCount: totalLessionCount,
+            success: true,
+            message: "Get All Data Success"
+        });
+
+    } catch (error) {
+        console.error(error);
+        if (transaction) await transaction.rollback();
+        res.status(500).json({
+            error: error.message || "Failed to retrieve data",
+            success: false,
+            message: "Failed to retrieve data"
+        });
+    }
+};
+
+
 exports.courseFindOne = async (req, res) => {
     let transaction;
     try {

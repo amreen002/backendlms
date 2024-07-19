@@ -1,5 +1,5 @@
 
-const { User, Role,Teacher,Student,Address,sequelize } = require('../models')
+const { User, Role, Teacher, Student, Address, sequelize } = require('../models')
 /* const nodemailer = require("nodemailer"); */
 /* const ejs = require("ejs"); */
 const path = require("path");
@@ -32,19 +32,19 @@ exports.create = async (req, res) => {
         let roleWiseUsers
         let updateusers;
 
-     
+
         const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
         if (!departmentRole) {
-          await transaction.rollback();
-          return res.status(404).json({ message: 'Department role not found' });
+            await transaction.rollback();
+            return res.status(404).json({ message: 'Department role not found' });
         }
-    
-        if (['Admin', 'Instructor','Administrator' ,'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
-          roleWiseUsers = 'Admin';
+
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+            roleWiseUsers = 'Admin';
         } else if (departmentRole.Name === 'Telecaller Team') {
-          roleWiseUsers = 'Sub Admin';
+            roleWiseUsers = 'Sub Admin';
         } else {
-          roleWiseUsers = 'User';
+            roleWiseUsers = 'User';
         }
         /* Users create */
         let data = {
@@ -56,12 +56,12 @@ exports.create = async (req, res) => {
             departmentId: req.body.departmentId,
             roleName: roleWiseUsers,
             assignToUsers: req.profile.id,
-            image: req.file? req.file.filename :null,
-            src:  req.file? req.file.path :null,
+            image: req.file ? req.file.filename : null,
+            src: req.file ? req.file.path : null,
             active: req.body.active
         }
-     
-        const users = await User.create(data,transaction)
+
+        const users = await User.create(data, transaction)
         /*==========================*/
 
         // Create the Address entry
@@ -72,50 +72,77 @@ exports.create = async (req, res) => {
 
 
         /*Update the Users entry*/
-        await User.update( { AddressableId: address.id },  { where: { id: users.id }, transaction });
+        await User.update({ AddressableId: address.id }, { where: { id: users.id }, transaction });
         updateusers = await User.findOne({ where: { id: users.id }, transaction });
         /*==========================*/
 
         /*Create the Teacher entry*/
-        if(users.departmentId == 3){
+        if (users.departmentId == 3) {
             const teacherData = {
-                Name:users.name,
-                Email:users.email,
+                Name: users.name,
+                Email: users.email,
                 Password: users.password,
-                TeacherType:"Online",
-                Username:users.userName,
-                PhoneNumber:users.phoneNumber,
-                roleId: req.profile.id,  
-                AddressableId:address.id,
-                DOB:req.body.DOB,
-                TeacherType:req.body.TeacherType,
-                YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+                TeacherType: "Online",
+                Username: users.userName,
+                PhoneNumber: users.phoneNumber,
+                roleId: req.profile.id,
+                AddressableId: address.id,
+                DOB: req.body.DOB,
+                TeacherType: req.body.TeacherType,
+                YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
             };
-            const teacher = await Teacher.create(teacherData,{transaction});
+            const teacher = await Teacher.create(teacherData, { transaction });
             await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
         }
         /*==========================*/
 
-        
+
         /*Create the Student entry*/
-        if(users.departmentId == 4){
-            const studentData= {
-                Name:users.name,
-                Email:users.email,
+        if (users.departmentId == 4) {
+            const studentData = {
+                Name: users.name,
+                Email: users.email,
                 Password: users.password,
-                Username:users.userName,
-                PhoneNumber:users.phoneNumber,
-                roleId:req.profile.id, 
-                AddressableId:address.id,
-                CoursesId:req.body.CoursesId,
-                Date:req.body.Date,
-                BatchId:req.body.BatchId,
+                Username: users.userName,
+                PhoneNumber: users.phoneNumber,
+                roleId: req.profile.id,
+                AddressableId: address.id,
+                CoursesId: req.body.CoursesId,
+                Date: req.body.Date,
+                BatchId: req.body.BatchId,
             };
-           const students = await Student.create(studentData,{transaction});
+            const students = await Student.create(studentData, { transaction });
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
         }
-      /*==========================*/
 
+        /*==========================*/
+        if (users.departmentId === 5) {
+            if (users.studentId === 4) {
+                const studentData = {
+                    Name: users.name,
+                    Email: users.email,
+                    Password: users.password,
+                    Username: users.userName,
+                    PhoneNumber: users.phoneNumber,
+                    roleId: users.id,
+                };
+                const students = await Student.create(studentData, { transaction });
+                await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
+            }
+            if (users.teacherId === 3) {
+                const teacherData = {
+                    Name: users.name,
+                    Email: users.email,
+                    Password: users.password,
+                    TeacherType: "Online",
+                    Username: users.userName,
+                    PhoneNumber: users.phoneNumber,
+                    roleId: users.id,
+                };
+                const teacher = await Teacher.create(teacherData, { transaction });
+                await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
+            }
+        }
         users.createdAt = null
         users.password = null
         users.updatedAt = null
@@ -219,23 +246,25 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     try {
         const loggedInUserId = req.profile.id;
-        const loggedInUser = await User.findOne({ where: { id: loggedInUserId }, attributes: [
-            "id",
-            "name",
-            "userName",
-            "phoneNumber",
-            "email",
-            "assignToUsers",
-            "departmentId",
-            "teacherId",
-            "studentId",
-            "roleName",
-            "image",
-            "src",
-            "address",
-            "message",
-            "active",
-        ],include: [{ model: Role },{ model: Address },{model: Teacher },{model: Student }] });
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }, { model: Address }, { model: Teacher }, { model: Student }]
+        });
 
         let where = {};
 
@@ -244,7 +273,7 @@ exports.findAll = async (req, res) => {
                 where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
             }
         } else {
-            if (loggedInUser.Role.Name == 'Super Admin'||loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator") {
+            if (loggedInUser.Role.Name == 'Super Admin' || loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator") {
                 where = where;
             } else {
                 where = { assignToUsers: loggedInUserId };
@@ -252,24 +281,26 @@ exports.findAll = async (req, res) => {
         }
 
 
-        let userchild = await User.findAll({ where,  attributes: [
-            "id",
-            "name",
-            "userName",
-            "phoneNumber",
-            "email",
-            "assignToUsers",
-            "departmentId",
-            "teacherId",
-            "studentId",
-            "roleName",
-            "image",
-            "src",
-            "address",
-            "message",
-            "active",
-            "createdAt",
-        ],  include: [{ model: Role },{ model: Address }] });
+        let userchild = await User.findAll({
+            where, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+                "createdAt",
+            ], include: [{ model: Role }, { model: Address }]
+        });
 
         if (req.query.LeadGetAllowated) {
             return res.status(200).json({ users: userchild, success: true, message: "Successfully retrieved all users" });
@@ -290,115 +321,149 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-      let roleWiseUsers;
-      const existingUser = await User.findOne({ where: { id: req.params.usersId }, transaction });
-      if (!existingUser) {
-        return res.status(404).json({ message: 'Existing profile not found' });
-      }
-  
-      const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
-      if (!departmentRole) {
-        await transaction.rollback();
-        return res.status(404).json({ message: 'Department role not found' });
-      }
-  
-      if (['Admin', 'Instructor','Administrator' ,'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
-        roleWiseUsers = 'Admin';
-      } else if (departmentRole.Name === 'Telecaller Team') {
-        roleWiseUsers = 'Sub Admin';
-      } else {
-        roleWiseUsers = 'User';
-      }
-  
-      const data = {
-        name: req.body.name,
-        userName: req.body.userName,
-        phoneNumber: req.body.phoneNumber,
-        email: req.body.email,
-        departmentId: req.body.departmentId,
-        roleName: roleWiseUsers,
-        assignToUsers: req.profile.id,
-        image: req.file ? req.file.filename : existingUser.image,
-        src: req.file ? req.file.path : existingUser.src,
-        active: req.body.active,
-      };
-  
-      await User.update(data, { where: { id: req.params.usersId }, transaction });
-  
-      let address = await Address.findOne({ where: { AddressableId: req.params.usersId }, transaction });
-      
-      if (!address) {
-        req.body.AddressableId = existingUser.id;
-        req.body.AddressableType = 'Users';
-        address = await Address.create(req.body, { transaction });
-        await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
-      } else if(existingUser.AddressableId===null){
-        req.body.AddressableId = existingUser.id;
-        req.body.AddressableType = 'Users';
-        address = await Address.create(req.body, { transaction });
-        await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
-      }
-       else {
-        req.body.AddressableId = existingUser.id;
-        req.body.AddressableType = 'Update Users';
-        await Address.update(req.body, { where: { id: address.id }, transaction });
-      }
-  
-      const updatedUser = await User.findOne({ where: { id: req.params.usersId }, transaction });
-      if (!updatedUser) {
-        await transaction.rollback();
-        return res.status(404).json({ message: 'User not found after update' });
-      }
-  
-      if (updatedUser.departmentId == 3) {
-        const teacherData = {
-          Name: updatedUser.name,
-          Email: updatedUser.email,
-          TeacherType: 'Online',
-          Username: updatedUser.userName,
-          PhoneNumber: updatedUser.phoneNumber,
-          AddressableId: updatedUser.AddressableId,
-          DOB:req.body.DOB,
-          TeacherType:req.body.TeacherType,
-          YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+        let roleWiseUsers;
+        const existingUser = await User.findOne({ where: { id: req.params.usersId }, transaction });
+        if (!existingUser) {
+            return res.status(404).json({ message: 'Existing profile not found' });
+        }
+
+        const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
+        if (!departmentRole) {
+            await transaction.rollback();
+            return res.status(404).json({ message: 'Department role not found' });
+        }
+
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+            roleWiseUsers = 'Admin';
+        } else if (departmentRole.Name === 'Telecaller Team') {
+            roleWiseUsers = 'Sub Admin';
+        } else {
+            roleWiseUsers = 'User';
+        }
+
+        const data = {
+            name: req.body.name,
+            userName: req.body.userName,
+            phoneNumber: req.body.phoneNumber,
+            email: req.body.email,
+            departmentId: req.body.departmentId,
+            roleName: roleWiseUsers,
+            assignToUsers: req.profile.id,
+            image: req.file ? req.file.filename : existingUser.image,
+            src: req.file ? req.file.path : existingUser.src,
+            active: req.body.active,
         };
-            
-        const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
-        await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
-      }
-  
-      if (updatedUser.departmentId == 4) {
-        const studentData = {
-          Name: updatedUser.name,
-          Email: updatedUser.email,
-          Password: updatedUser.password,
-          Username: updatedUser.userName,
-          PhoneNumber: updatedUser.phoneNumber,
-          AddressableId: updatedUser.AddressableId,
-          CoursesId:req.body.CoursesId,
-          Date:req.body.Date,
-          BatchId:req.body.BatchId,
-        };
-        const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
-        await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
-      }
-  
-      await transaction.commit();
-      res.status(200).json({
-        users: updatedUser,
-        success: true,
-        message: 'Update successful',
-      });
+
+        await User.update(data, { where: { id: req.params.usersId }, transaction });
+
+        let address = await Address.findOne({ where: { AddressableId: req.params.usersId }, transaction });
+
+        if (!address) {
+            req.body.AddressableId = existingUser.id;
+            req.body.AddressableType = 'Users';
+            address = await Address.create(req.body, { transaction });
+            await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
+        } else if (existingUser.AddressableId === null) {
+            req.body.AddressableId = existingUser.id;
+            req.body.AddressableType = 'Users';
+            address = await Address.create(req.body, { transaction });
+            await User.update({ AddressableId: address.id }, { where: { id: existingUser.id }, transaction });
+        }
+        else {
+            req.body.AddressableId = existingUser.id;
+            req.body.AddressableType = 'Update Users';
+            await Address.update(req.body, { where: { id: address.id }, transaction });
+        }
+
+        const updatedUser = await User.findOne({ where: { id: req.params.usersId }, transaction });
+        if (!updatedUser) {
+            await transaction.rollback();
+            return res.status(404).json({ message: 'User not found after update' });
+        }
+
+        if (updatedUser.departmentId == 3) {
+            const teacherData = {
+                Name: updatedUser.name,
+                Email: updatedUser.email,
+                TeacherType: 'Online',
+                Username: updatedUser.userName,
+                PhoneNumber: updatedUser.phoneNumber,
+                AddressableId: updatedUser.AddressableId,
+                DOB: req.body.DOB,
+                TeacherType: req.body.TeacherType,
+                YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
+            };
+
+            const teacher = await Teacher.update(teacherData, { where: { id: updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
+            await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
+        }
+
+        if (updatedUser.departmentId == 4) {
+            const studentData = {
+                Name: updatedUser.name,
+                Email: updatedUser.email,
+                Password: updatedUser.password,
+                Username: updatedUser.userName,
+                PhoneNumber: updatedUser.phoneNumber,
+                AddressableId: updatedUser.AddressableId,
+                CoursesId: req.body.CoursesId,
+                Date: req.body.Date,
+                BatchId: req.body.BatchId,
+            };
+            const student = await Student.update(studentData, { where: { id: updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
+            await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
+        }
+        if (updatedUser.departmentId == 5) {
+            if (updatedUser.studentId) {
+                const studentData = {
+                    Name: updatedUser.name,
+                    Email: updatedUser.email,
+                    Password: updatedUser.password,
+                    Username: updatedUser.userName,
+                    PhoneNumber: updatedUser.phoneNumber,
+                    roleId: updatedUser.id,
+                    AddressableId: updatedUser.AddressableId,
+                    CoursesId:req.body.CoursesId,
+                    Date:req.body.Date,
+                    BatchId:req.body.BatchId,
+                  };
+                  const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
+                  await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
+            }
+            if (updatedUser.teacherId) {
+                const teacherData = {
+                    Name: updatedUser.name,
+                    Email: updatedUser.email,
+                    TeacherType: 'Online',
+                    Username: updatedUser.userName,
+                    PhoneNumber: updatedUser.phoneNumber,
+                    roleId: updatedUser.id,
+                    AddressableId: updatedUser.AddressableId,
+                    DOB:req.body.DOB,
+                    TeacherType:req.body.TeacherType,
+                    YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+                  };
+                  const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
+                  await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
+            }
+        }
+
+        await transaction.commit();
+        res.status(200).json({
+            users: updatedUser,
+            success: true,
+            message: 'Update successful',
+        });
     } catch (error) {
-      console.error('Error while updating user:', error);
-      await transaction.rollback();
-      res.status(500).json({
-        error: error,
-        success: false,
-        message: 'Error while updating the user',
-      });
+        console.error('Error while updating user:', error);
+        await transaction.rollback();
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: 'Error while updating the user',
+        });
     }
-  };
+};
 
 exports.delete = async (req, res) => {
     try {

@@ -112,7 +112,33 @@ exports.signup = async (req, res) => {
            const students = await Student.create(studentData,{transaction});
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
         }
-      
+        if(users.departmentId == 5){
+            if (users.studentId==4) {
+                const studentData= {
+                    Name:users.name,
+                    Email:users.email,
+                    Password: users.password,
+                    Username:users.userName,
+                    PhoneNumber:users.phoneNumber,
+                    roleId:users.id, 
+                };
+               const students = await Student.create(studentData,{transaction});
+                await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
+            }
+            if(users.teacherId == 3){
+                const teacherData = {
+                    Name:users.name,
+                    Email:users.email,
+                    Password: users.password,
+                    TeacherType:"Online",
+                    Username:users.userName,
+                    PhoneNumber:users.phoneNumber,
+                    roleId: users.id,  
+                };
+                const teacher = await Teacher.create(teacherData,{transaction});
+                await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
+            }
+        }
         
         await transaction.commit();
         users.createdAt = null
@@ -300,7 +326,40 @@ exports.update = async (req, res) => {
         const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
       }
-  
+      if (updatedUser.departmentId == 5) {
+        if (updatedUser.studentId) {
+            const studentData = {
+                Name: updatedUser.name,
+                Email: updatedUser.email,
+                Password: updatedUser.password,
+                Username: updatedUser.userName,
+                PhoneNumber: updatedUser.phoneNumber,
+                roleId: updatedUser.id,
+                AddressableId: updatedUser.AddressableId,
+                CoursesId:req.body.CoursesId,
+                Date:req.body.Date,
+                BatchId:req.body.BatchId,
+              };
+              const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
+              await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
+        }
+        if (updatedUser.teacherId) {
+            const teacherData = {
+                Name: updatedUser.name,
+                Email: updatedUser.email,
+                TeacherType: 'Online',
+                Username: updatedUser.userName,
+                PhoneNumber: updatedUser.phoneNumber,
+                roleId: updatedUser.id,
+                AddressableId: updatedUser.AddressableId,
+                DOB:req.body.DOB,
+                TeacherType:req.body.TeacherType,
+                YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
+              };
+              const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
+              await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
+        }
+       }
       await transaction.commit();
       res.status(200).json({
         users: updatedUser,
