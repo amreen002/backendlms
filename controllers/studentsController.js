@@ -31,7 +31,8 @@ exports.create = async (req, res) => {
             roleId: req.profile.id,
             Date,
             CoursesId,
-            BatchId
+            BatchId,
+            image: req.file? req.file.filename :null,
         };
 
         let students = await Student.create(studentData, { transaction });
@@ -52,7 +53,7 @@ exports.create = async (req, res) => {
         const updatedStudent = await Student.findOne({ where: { id: students.id }, transaction });
 
         const userData = {
-            students: students.id,
+            studentId: students.id,
             name: students.Name,
             userName: students.Username,
             phoneNumber: students.PhoneNumber,
@@ -62,7 +63,7 @@ exports.create = async (req, res) => {
             departmentId: 4,
             roleName: "Admin",
             AddressableId: address.id,
-            image: req.file? req.file.filename :null,
+            image: students.image,
             src:  req.file? req.file.path :null,
         };
 
@@ -204,7 +205,15 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        let data = {
+       const userfindstudent= await Student.findOne({ where: { id: req.params.studentsId }, order: [['updatedAt', 'DESC']] });
+       if (!userfindstudent) {
+        await transaction.rollback();
+        return res.status(404).json({
+            success: false,
+            message: "Associated User Find Student not found"
+        });
+    }
+       let data = {
             Name: req.body.Name,
             LastName: req.body.LastName,
             AddressableId: req.body.AddressableId,
@@ -214,7 +223,8 @@ exports.update = async (req, res) => {
             roleId: req.profile.id,
             Date: req.body.Date,
             CoursesId: req.body.CoursesId,
-            BatchId: req.body.BatchId
+            BatchId: req.body.BatchId,
+            image: req.file? req.file.filename :userfindstudent.image,
         }
         await Student.update(data, { where: { id: req.params.studentsId }, order: [['updatedAt', 'DESC']] });
      
@@ -255,7 +265,7 @@ exports.update = async (req, res) => {
             studentId: updatedStudent.id,
             teacherId: 0,
             AddressableId: updatedStudent.AddressableId,
-            image: req.file ? req.file.filename : user.image,
+            image: req.file ? req.file.filename : updatedStudent.image,
             src: req.file ? req.file.path : user.src,
         };
 

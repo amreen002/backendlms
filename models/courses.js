@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Lession, { foreignKey: 'CoursesId' });
       this.hasMany(models.Video, { foreignKey: 'CoursesId' });
       this.hasMany(models.Quize , { foreignKey: 'CourseId' });
+      this.hasMany(models.Teacher, { foreignKey: 'CousesId' });
     }
     
   }

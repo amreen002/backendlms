@@ -323,32 +323,84 @@ exports.findAllCourse = async (req, res) => {
 
 exports.findAllCourseStudent = async (req, res) => {
     let transaction;
+    let Teachers;
+    let Students;
     try {
         // Start a transaction
         transaction = await sequelize.transaction();
 
-        let where = {};
-        const loggedInUser = await Student.findOne({
-            where,
-            attributes: { exclude: ['Password'] },
-            include: [{
-                model: User,
-                include: [{ model: Role }]
-            }],
+        let userId = req.profile.id;
+
+        const user = await User.findOne({
+            where: { id: userId },
+            attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+                "createdAt",
+            ],
+            include: [{ model: Role }, { model: Address }],
+            transaction
         });
+
+        if (!user) {
+            await transaction.rollback();
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Fetch related student and teacher records
+        if (user.studentId) {
+            Students = await Student.findOne({
+                where: { id: user.studentId },
+                transaction
+            });
+        }
+
+        if (user.teacherId) {
+            Teachers = await Teacher.findOne({
+                where: { id: user.teacherId },
+                transaction
+            });
+        }
+
+        // Add related records to the user object if they exist
+        if (Teachers) {
+            user.dataValues.Teachers = [Teachers];
+        }
+        if (Students) {
+            user.dataValues.Students = [Students];
+        }
+
+       
 
         let condition = "1=1"; // Default condition to ensure query is valid
         let replacements = {};
 
-        if (loggedInUser.User.Role.Name === "Student") {
+        if (user && user.Role.Name === "Student"||user && user.Role.Name === "Guest/Viewer") {
             condition = `courses.id = :id`;
-            replacements.id = loggedInUser.CoursesId;
+            replacements.id = Students.CoursesId;
+        } else if (user && user.Role.Name === "Instructor"||user && user.Role.Name === "Guest/Viewer") {
+            condition = `FIND_IN_SET(courses.id, :id)`;
+            replacements.id = Teachers.CousesId;
         }
 
         let searching = "";
         if (req.query.search) {
             const search = req.query.search;
-            searching = `AND (courses.name LIKE '%${search}%' OR topics.name LIKE '%${search}%' OR lessons.LessonTitle LIKE '%${search}%')`;
+            searching = `AND (courses.name LIKE :search OR topics.name LIKE :search OR lessons.LessonTitle LIKE :search)`;
+            replacements.search = `%${search}%`;
         }
 
         // SQL Query

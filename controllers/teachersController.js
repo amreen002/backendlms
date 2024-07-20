@@ -5,9 +5,8 @@ const { Teacher, User, Role, Address, sequelize } = require('../models'); // Adj
 
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
-    console.log(req.file)
-    const { Password, Name, LastName, AddressableId, Email, DOB, TeacherType, Username, PhoneNumber, YourIntroducationAndSkills } = req.body;
-
+    const { Password, Name, LastName, AddressableId, Email, DOB, TeacherType, Username, PhoneNumber, YourIntroducationAndSkills,CousesId } = req.body;
+    const image =req.file? req.file.filename :null
     try {
       
         if (!Password) {
@@ -27,7 +26,9 @@ exports.create = async (req, res) => {
             Username,
             PhoneNumber,
             roleId: req.profile.id,
-            YourIntroducationAndSkills
+            YourIntroducationAndSkills,
+            CousesId,
+            image
         };
 
         let teachers = await Teacher.create(teacherData, { transaction });
@@ -58,7 +59,7 @@ exports.create = async (req, res) => {
             departmentId: 3,
             roleName: "Admin",
             AddressableId: address.id,
-            image: req.file ? req.file.filename : null,
+            image: teachers.image,
             src: req.file ? req.file.path : null,
         };
 
@@ -170,6 +171,14 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
+       const userfindteacher =  await Teacher.findOne({ where: { id: req.params.teachersId }, transaction });
+       if (!userfindteacher) {
+        await transaction.rollback();
+        return res.status(404).json({
+            success: false,
+            message: "Associated User Find Teacher not found"
+        });
+    }
         const data = {
             Name: req.body.Name,
             LastName: req.body.LastName,
@@ -180,6 +189,7 @@ exports.update = async (req, res) => {
             Username: req.body.Username,
             PhoneNumber: req.body.PhoneNumber,
             YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
+            image: req.file? req.file.filename :userfindteacher.image,
         };
 
         await Teacher.update(data, { where: { id: req.params.teachersId }, transaction });
@@ -229,7 +239,7 @@ exports.update = async (req, res) => {
             teacherId: updatedTeacher.id,
             studentId: 0,
             AddressableId: updatedTeacher.AddressableId,
-            image: req.file ? req.file.filename : user.image,
+            image: req.file ? updatedTeacher.image : user.image,
             src: req.file ? req.file.path : user.src,
         };
 

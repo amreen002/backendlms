@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         constraints: false,
       });
       this.belongsTo(models.User, { foreignKey: 'roleId' });
-      this.hasMany(models.Batch, { foreignKey: 'InstructorId' });  
+      this.belongsTo(models.Courses, { foreignKey: 'CousesId' });
     }
   }
   Teacher.init({
@@ -65,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     CousesId: {
       field: 'CousesId',
-      type: DataTypes.INTEGER
+      type: DataTypes.JSON
     },
     image: {
       type: DataTypes.STRING

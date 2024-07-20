@@ -10,7 +10,7 @@ module.exports = {
         'CousesId', // new field name
         {
           field: 'CousesId',
-          type: Sequelize.INTEGER
+          type: Sequelize.JSON
         },
       ),
       queryInterface.addColumn(
