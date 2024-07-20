@@ -120,7 +120,7 @@ exports.update = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
        let existingVideoPath = await Video.findOne({ where: {  id: req.params.videoId} ,transaction});
-        if (!existingVideoPath.VideoUplod) {
+        if (!existingVideoPath) {
             return res.status(404).json({ message: 'Existing Video Path not found' });
         }
 

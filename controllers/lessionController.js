@@ -117,7 +117,7 @@ exports.update = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         const exitedpath = await Lession.findOne({ where: { id: req.params.lessionId },transaction });
-        if (!exitedpath.LessionUpload) {
+        if (!exitedpath) {
             return res.status(404).json({ message: 'Existing Lission Path not found' });
         }
         let uploadPDF = [];

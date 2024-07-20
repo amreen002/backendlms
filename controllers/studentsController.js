@@ -15,6 +15,7 @@ exports.create = async (req, res) => {
         CoursesId,
         BatchId,
     } = req.body;
+    const image =req.file? req.file.filename :null
     try {
         if (!Password) {
             throw new Error('Password is required');
@@ -32,7 +33,7 @@ exports.create = async (req, res) => {
             Date,
             CoursesId,
             BatchId,
-            image: req.file? req.file.filename :null,
+            image
         };
 
         let students = await Student.create(studentData, { transaction });

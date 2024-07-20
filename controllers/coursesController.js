@@ -656,8 +656,8 @@ exports.update = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         const courseId = req.params.coursesId;
-        let course = await Courses.findOne({ where: { id: courseId }, order: [['updatedAt', 'DESC']],transaction });
-        if (!course.CourseUpload) {
+        let course = await Courses.findOne({ where: { id: req.params.coursesId }, order: [['updatedAt', 'DESC']],transaction });
+        if (!course) {
             return res.status(404).json({ message: 'Existing Class Upload not found' });
         }
         let updatedData = {
@@ -681,7 +681,7 @@ exports.update = async (req, res) => {
             message: "Class updated successfully"
         });
     } catch (error) {
-        console.error(error);
+        console.log(error);
         await transaction.rollback();
         res.status(500).json({
             error: error.message || "An error occurred while updating the Class",
