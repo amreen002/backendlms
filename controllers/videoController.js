@@ -7,7 +7,6 @@ exports.create = async (req, res) => {
     try {
         let videos = [];
         for (let index = 0; index < req.files.length; index++) {
-            console.log( req.files)
             const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
             videos.push({
             path: req.files[index].path,
@@ -96,7 +95,7 @@ exports.findAll = async (req, res) => {
         if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
             where = {}
         else {
-            where = { roleId: loggedInUserId }
+            where = { userId: loggedInUserId }
         }
         let video = await Video.findAll({ where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }],transaction });
         await transaction.commit();
@@ -125,20 +124,30 @@ exports.update = async (req, res) => {
         }
 
         let videos = [];
-        for (let index = 0; index < req.files.length; index++) {
-            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
-            videos.push({
-            path: req.files[index].path,
-            name: originalNameWithoutExtension,
-          });
+        if (req.files) {
+            for (let index = 0; index < req.files.length; index++) {
+                const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+                videos.push({
+                    path: req.files[index].path,
+                    name: originalNameWithoutExtension,
+                });
+            }
         }
 
+        let updatedVideoUpload = existingVideoPath.VideoUplod || [];
+        if (req.body.removedFiles) {
+            const removedFiles = JSON.parse(req.body.removedFiles);
+            updatedVideoUpload = updatedVideoUpload.filter(file => !removedFiles.includes(file.path));
+        }
+        if (videos.length > 0) {
+            updatedVideoUpload = updatedVideoUpload.concat(videos);
+        }
         let data = {
             Title: req.body.Title,
             CoursesId: req.body.CoursesId,
             TopicId: req.body.TopicId,
             userId : req.profile.id,
-            VideoUplod: req.files ? videos :existingVideoPath.VideoUplod,
+            VideoUplod:updatedVideoUpload,
             VideoIframe: req.body.VideoIframe,
         }
         let video = await Video.update(data, { where: { id: req.params.videoId },transaction });

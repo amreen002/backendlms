@@ -1,7 +1,8 @@
 
+const path = require('path');
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
-const { Teacher, User, Role, Address, sequelize } = require('../models'); // Adjust the path as necessary
+const { Teacher, User, Role, Address, sequelize,Courses } = require('../models'); // Adjust the path as necessary
 
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -90,21 +91,50 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const teachers = await Teacher.findOne({ where: { id: req.params.teachersId},attributes: { exclude: ['Password'] }, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']],transaction });
+        // Fetch teacher along with related models
+        const teachers = await Teacher.findOne({
+            where: { id: req.params.teachersId },
+            attributes: { exclude: ['Password'] },
+            include: [
+                {
+                    model: User,
+                    attributes: { exclude: ['password', 'expireToken', 'resentPassword', 'passwordResetOtp'] },
+                    include: [{ model: Role }]
+                },
+                { model: Address }
+            ],
+            order: [['updatedAt', 'DESC']],
+            transaction
+        });
+
+        // If teacher is found and CousesId exists
+        if (teachers && teachers.CousesId) {
+            const courseIds = teachers.CousesId.split(',').map(id => parseInt(id, 10)); // Convert to an array of integers
+
+            // Fetch courses based on the course IDs
+            const courses = await Courses.findAll({
+                where: { id: courseIds },
+                transaction
+            });
+
+            // Add related courses to the teacher object
+            teachers.dataValues.Courses = courses; // Directly assign courses array
+        }
+
         await transaction.commit();
 
         res.status(200).json({
             teachers: teachers,
             success: true,
-            message: "get one Teachers by ID"
+            message: "Successfully fetched teacher by ID"
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         await transaction.rollback();
         res.status(500).json({
-            error: error,
+            error: error.message,
             success: false,
-            message: 'error in getting the Teachers'
+            message: 'Error in getting the teacher'
         });
     }
 }
@@ -151,6 +181,7 @@ exports.findAll = async (req, res) => {
             where = { roleId: loggedInUserId }
         }
         let teachers = await Teacher.findAll({where, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] ,transaction})
+       
         await transaction.commit();
         res.status(200).json({
             teachers: teachers,
@@ -170,32 +201,39 @@ exports.findAll = async (req, res) => {
 
 exports.update = async (req, res) => {
     const transaction = await sequelize.transaction();
+
     try {
-       const userfindteacher =  await Teacher.findOne({ where: { id: req.params.teachersId }, transaction });
-       if (!userfindteacher) {
-        await transaction.rollback();
-        return res.status(404).json({
-            success: false,
-            message: "Associated User Find Teacher not found"
-        });
-    }
-        const data = {
+        const teacherId = req.params.teachersId;
+
+        // Fetch the teacher by ID
+        const teacher = await Teacher.findOne({ where: { id: teacherId }, transaction });
+        if (!teacher) {
+            await transaction.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "Teacher not found"
+            });
+        }
+
+        // Prepare the update data
+        const updatedTeacherData = {
             Name: req.body.Name,
             LastName: req.body.LastName,
-            AddressableId: req.body.AddressableId,
             Email: req.body.Email,
             DOB: req.body.DOB,
             TeacherType: req.body.TeacherType,
             Username: req.body.Username,
             PhoneNumber: req.body.PhoneNumber,
             YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
-            image: req.file? req.file.filename :userfindteacher.image,
+            image: req.file ? req.file.filename : teacher.image,
+            CousesId: req.body.CousesId
         };
 
-        await Teacher.update(data, { where: { id: req.params.teachersId }, transaction });
+        // Update the teacher
+        await Teacher.update(updatedTeacherData, { where: { id: teacherId }, transaction });
 
-        const user = await User.findOne({ where: { teacherId: req.params.teachersId }, transaction });
-  
+        // Fetch the associated user
+        const user = await User.findOne({ where: { teacherId: teacherId }, transaction });
         if (!user) {
             await transaction.rollback();
             return res.status(404).json({
@@ -204,48 +242,44 @@ exports.update = async (req, res) => {
             });
         }
 
-        const updatedTeacher = await Teacher.findOne({ where: { id: req.params.teachersId }, transaction });
-        if (!updatedTeacher) {
-            await transaction.rollback();
-            return res.status(404).json({
-                success: false,
-                message: "Teacher not found"
-            });
-        }
+        // Fetch the address associated with the teacher
+        let address = await Address.findOne({ where: { AddressableId: teacherId }, transaction });
 
-        let address = await Address.findOne({ where: { AddressableId: req.params.teachersId }, transaction });
-        if (user.teacherId === updatedTeacher.id) {
-            const addressusers = await Address.findOne({ where: { AddressableId: user.id }, transaction });
-            req.body.AddressableId = user.id;
-            req.body.AddressableType = "Instructor";
-            await Address.update(req.body, { where: { id: addressusers.id }, transaction });
-        }else{
-            req.body.AddressableId = req.params.teachersId;
-            req.body.AddressableType = "Instructor";
+        // Update or create the address based on the association
+        req.body.AddressableType = "Instructor";
+        if (address) {
             await Address.update(req.body, { where: { id: address.id }, transaction });
-    
+        } else {
+            req.body.AddressableId = teacherId;
+            await Address.create(req.body, { transaction });
         }
-        
-       
-        const updatedAddress = await Address.findOne({ where: { id: address }, transaction });
 
+        // Prepare the updated user data
         const updatedUserData = {
-            name: updatedTeacher.Name,
-            userName: updatedTeacher.Username,
-            phoneNumber: updatedTeacher.PhoneNumber,
-            email: updatedTeacher.Email,
+            name: updatedTeacherData.Name,
+            userName: updatedTeacherData.Username,
+            phoneNumber: updatedTeacherData.PhoneNumber,
+            email: updatedTeacherData.Email,
             departmentId: 3, // Assuming departmentId 3 corresponds to 'Instructor'
             roleName: "Admin",
-            teacherId: updatedTeacher.id,
+            teacherId: teacherId,
             studentId: 0,
-            AddressableId: updatedTeacher.AddressableId,
-            image: req.file ? updatedTeacher.image : user.image,
-            src: req.file ? req.file.path : user.src,
+            AddressableId: teacherId,
+            image: updatedTeacherData.image,
+            src: req.file ? req.file.path : user.src
         };
 
+        // Update the user
         await User.update(updatedUserData, { where: { id: user.id }, transaction });
+
+        // Commit the transaction
         await transaction.commit();
 
+        // Fetch the updated teacher and address
+        const updatedTeacher = await Teacher.findOne({ where: { id: teacherId } });
+        const updatedAddress = await Address.findOne({ where: { AddressableId: teacherId } });
+
+        // Respond with success
         res.status(200).json({
             teachers: updatedTeacher,
             address: updatedAddress,
@@ -253,15 +287,16 @@ exports.update = async (req, res) => {
             message: "Teacher updated successfully"
         });
     } catch (error) {
-        console.log(error)
+        console.error(error);
         await transaction.rollback();
         res.status(500).json({
-            error: error,
             success: false,
-            message: "Error while updating the teacher"
+            message: "Error while updating the teacher",
+            error: error.message
         });
     }
 };
+
 
 
 exports.delete = async (req, res) => {

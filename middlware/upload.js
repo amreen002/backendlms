@@ -60,7 +60,7 @@ const videoFilter = function (req, file, cb) {
 const uploadPDF = multer({ 
     storage: pdfStorage,
     limits: {
-        fileSize: 1024*1024*10 // 10 MB
+        fileSize: 1024*1024*30// 10 MB
     },
     fileFilter: pdfFilter
 });
@@ -68,7 +68,7 @@ const uploadPDF = multer({
 const uploadImage = multer({ 
     storage: imageStorage,
     limits: {
-        fileSize: 1024*1024*10
+        fileSize: 1024*1024*20
     },
     fileFilter: imageFilter
 });
@@ -76,7 +76,7 @@ const uploadImage = multer({
 const uploadVideo = multer({ 
     storage: videoStorage,
     limits: {
-        fileSize: 1024*1024*10
+        fileSize: 1024*1024*30
     },
     fileFilter: videoFilter
 });

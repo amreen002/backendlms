@@ -73,7 +73,7 @@ exports.findAll = async (req, res) => {
         if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
             where = {}
         else {
-            where = { roleId: loggedInUserId }
+            where = { userId: loggedInUserId }
         }
         let topic = await Topic.findAll({where ,include: [ { model: Courses }],transaction});
         await transaction.commit();

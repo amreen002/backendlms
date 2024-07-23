@@ -2,7 +2,6 @@ const { body } = require('express-validator');
 const { Courses } = require('../models');
 
 exports.classValidator  = async (req, res, next) => {
-    console.log(req.body.name)
        // await Promise.all(  console.log(req.body.name));
 
 

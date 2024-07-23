@@ -11,7 +11,6 @@ exports.authValidator = (req, res) => {
             }).notEmpty().isEmail(),
 
         body('email').custom(async (value, { req }) => {
-            console.log(!value)
             if (!value) {
                 return Promise.reject({
                     error: 'Email Is Required',

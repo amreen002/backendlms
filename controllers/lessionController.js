@@ -45,8 +45,7 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
-        const userId = req.profile.id
-        const lession = await Lession.findOne({ where: { id: req.params.lessionId ,userId:userId}, include: [{model:Courses,include: [{ model: Topic }] }],transaction });
+        const lession = await Lession.findOne({ where: { id: req.params.lessionId}, include: [{model:Courses,include: [{ model: Topic }] }],transaction });
         await transaction.commit();
         res.status(200).json({
             lession: lession,
@@ -93,7 +92,7 @@ exports.findAll = async (req, res) => {
         if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
             where = {}
         else {
-            where = { roleId: loggedInUserId }
+            where = { userId: loggedInUserId }
         }
         let lession = await Lession.findAll({ where, include: [{ model: Topic },{model:Courses,include: [{model:Categories},{  model: Batch}] }],transaction});
         await transaction.commit();
@@ -113,46 +112,61 @@ exports.findAll = async (req, res) => {
     }
 }
 
+
 exports.update = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
-        const exitedpath = await Lession.findOne({ where: { id: req.params.lessionId },transaction });
-        if (!exitedpath) {
-            return res.status(404).json({ message: 'Existing Lission Path not found' });
+        const existingLession = await Lession.findOne({ where: { id: req.params.lessionId }, transaction });
+        if (!existingLession) {
+            return res.status(404).json({ message: 'Existing Lession Path not found' });
         }
+
         let uploadPDF = [];
-        for (let index = 0; index < req.files.length; index++) {
-            const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
-            uploadPDF.push({
-            path: req.files[index].path,
-            name: originalNameWithoutExtension,
-          });
+        if (req.files) {
+            for (let index = 0; index < req.files.length; index++) {
+                const originalNameWithoutExtension = path.basename(req.files[index].originalname, path.extname(req.files[index].originalname));
+                uploadPDF.push({
+                    path: req.files[index].path,
+                    name: originalNameWithoutExtension,
+                });
+            }
+        }
+
+        // Combine existing files with new uploads
+        let updatedLessionUpload = existingLession.LessionUpload || [];
+        if (req.body.removedFiles) {
+            const removedFiles = JSON.parse(req.body.removedFiles);
+            updatedLessionUpload = updatedLessionUpload.filter(file => !removedFiles.includes(file.path));
+        }
+        if (uploadPDF.length > 0) {
+            updatedLessionUpload = updatedLessionUpload.concat(uploadPDF);
         }
 
         let data = {
-            LessionTitle:req.body.LessionTitle,
-            CoursesId:req.body.CoursesId,
-            TopicId:req.body.TopicId,
-            userId : req.profile.id,
-            LessionUpload:req.files ? uploadPDF :exitedpath.LessionUpload,
-         }
-        const lession = await Lession.update(data, { where: { id: req.params.lessionId } ,transaction});
+            LessionTitle: req.body.LessionTitle,
+            CoursesId: req.body.CoursesId,
+            TopicId: req.body.TopicId,
+            userId: req.profile.id,
+            LessionUpload: updatedLessionUpload
+        };
+
+        await Lession.update(data, { where: { id: req.params.lessionId }, transaction });
         await transaction.commit();
         res.status(200).json({
-            lession: lession,
             success: true,
-            message: "Update Successfully Lession"
+            message: "Update Successfully Model"
         });
     } catch (error) {
+        console.log(error);
         await transaction.rollback();
         res.status(500).json({
             error: error,
             success: false,
-            message: "error  While Update The Lession"
+            message: "Error While Updating The Model"
         });
     }
+};
 
-}
 
 exports.delete = async (req, res) => {
     let transaction = await sequelize.transaction();

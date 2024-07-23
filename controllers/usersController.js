@@ -58,7 +58,9 @@ exports.create = async (req, res) => {
             assignToUsers: req.profile.id,
             image: req.file ? req.file.filename : null,
             src: req.file ? req.file.path : null,
-            active: req.body.active
+            active: req.body.active,
+            teacherId:req.body.teacherId,
+            studentId:req.body.studentId,
         }
 
         const users = await User.create(data, transaction)
@@ -77,7 +79,7 @@ exports.create = async (req, res) => {
         /*==========================*/
 
         /*Create the Teacher entry*/
-        if (users.departmentId == 3) {
+        if (updateusers.departmentId == 3) {
             const teacherData = {
                 Name: users.name,
                 Email: users.email,
@@ -100,7 +102,7 @@ exports.create = async (req, res) => {
 
 
         /*Create the Student entry*/
-        if (users.departmentId == 4) {
+        if (updateusers.departmentId == 4) {
             const studentData = {
                 Name: users.name,
                 Email: users.email,
@@ -120,8 +122,8 @@ exports.create = async (req, res) => {
         }
 
         /*==========================*/
-        if (users.departmentId === 5) {
-            if (users.studentId === 4) {
+        if (updateusers.departmentId === 5) {
+            if (updateusers.studentId === 4) {
                 const studentData = {
                     Name: users.name,
                     Email: users.email,
@@ -138,7 +140,7 @@ exports.create = async (req, res) => {
                 const students = await Student.create(studentData, { transaction });
                 await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
             }
-            if (users.teacherId === 3) {
+            if (updateusers.teacherId === 3) {
                 const teacherData = {
                     Name: users.name,
                     Email: users.email,

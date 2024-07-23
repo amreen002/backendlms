@@ -388,12 +388,24 @@ exports.findAllCourseStudent = async (req, res) => {
         let condition = "1=1"; // Default condition to ensure query is valid
         let replacements = {};
 
-        if (user && user.Role.Name === "Student"||user && user.Role.Name === "Guest/Viewer") {
+        if (user && user.Role.Name === "Student") {
             condition = `courses.id = :id`;
-            replacements.id = Students.CoursesId;
-        } else if (user && user.Role.Name === "Instructor"||user && user.Role.Name === "Guest/Viewer") {
+            replacements.id = Students.CoursesId; 
+        }
+        if (user && user.Role.Name === "Instructor") {
             condition = `FIND_IN_SET(courses.id, :id)`;
             replacements.id = Teachers.CousesId;
+        }
+        if(user && user.Role.Name === "Guest/Viewer"){
+            if (user.teacherId) {
+                condition = `FIND_IN_SET(courses.id, :id)`;
+                replacements.id = Teachers.CousesId;
+            }
+            if (user.studentId) {
+                condition = `courses.id = :id`;
+             replacements.id = Students.CoursesId;
+            }
+
         }
 
         let searching = "";
@@ -665,7 +677,7 @@ exports.update = async (req, res) => {
             userId: req.profile.id,
             CoursePrice: req.body.CoursePrice,
             CourseCategoryId: req.body.CourseCategoryId,
-            CourseUpload: req.file ? req.file.path : course.CourseUpload,
+            CourseUplod: req.file ? req.file.path : course.CourseUplod,
             CourseDuration: req.body.CourseDuration,
             AboutCourse: req.body.AboutCourse,
             Description: req.body.Description,

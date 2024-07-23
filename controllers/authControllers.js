@@ -1,11 +1,13 @@
+const path = require('path');
 const { User,Role ,Teacher,Student,Address,sequelize,Countries,Staties,Cities} = require('../models')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const secretkey = "token"
 const session = require('express-session');
+const { Col } = require('sequelize/lib/utils');
+const { Console } = require('console');
 
 exports.login = async (req, res) => {
-	//console.log(req);
     try {
 
         const password = req.body.password;
@@ -83,7 +85,10 @@ exports.signup = async (req, res) => {
             assignToUsers: 1,
             image: req.file? req.file.filename :null,
             src:  req.file? req.file.path :null,
-            active: req.body.active
+            active: req.body.active,
+            teacherId:req.body.teacherId,
+            studentId:req.body.studentId,
+
         }                                                                                                                                            
         let users = await User.create(data,{transaction})
 
@@ -263,7 +268,7 @@ exports.update = async (req, res) => {
       } else {
         roleWiseUsers = 'User';
       }
-  
+
       const data = {
         name: req.body.name,
         userName: req.body.userName,

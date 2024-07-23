@@ -1,3 +1,4 @@
+const path = require('path');
 const { Op, where } = require('sequelize');
 const bcrypt = require('bcrypt');
 const { Student, User, Role, Address, Courses,Batch,Teacher, sequelize } = require('../models')
