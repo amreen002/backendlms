@@ -320,19 +320,20 @@ exports.ReportsCard = async (req, res) => {
             const ResultMarks = obtainedMarks;
             const Percentage = totalMarks > 0 ? ((obtainedMarks / TotalQuizeMarks) * 100).toFixed(2) : 0;
             const PassStatus = Percentage >= 23 ? 'Pass' : 'Fail';
+
             let Grads
-            if (Percentage >= 75 && Percentage < 100) {
+            if (Percentage >= 75 && Percentage < 85) {
                 Grads = "A";
-            } else if (Percentage === 100) {
-                Grads = "A+";
             } else if (Percentage >= 59 && Percentage < 74) {
                 Grads = "B+";
             } else if (Percentage >= 55 && Percentage < 59) {
                 Grads = "B";
             } else if (Percentage >= 33 && Percentage < 55) {
                 Grads = "C+";
-            } else {
+            } else if (Percentage < 33) {
                 Grads = "-----";
+            } else {
+                Grads = "A+";
             }
 
 

@@ -3,7 +3,7 @@ const path = require('path');
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const { Teacher, User, Role, Address, sequelize,Courses } = require('../models'); // Adjust the path as necessary
-
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     const { Password, Name, LastName, AddressableId, Email, DOB, TeacherType, Username, PhoneNumber, YourIntroducationAndSkills,CousesId } = req.body;
@@ -152,6 +152,7 @@ exports.findAll = async (req, res) => {
                  };
              }
         */
+        let subQuery=false
         let where;
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
@@ -180,14 +181,26 @@ exports.findAll = async (req, res) => {
         else {
             where = { roleId: loggedInUserId }
         }
-        let teachers = await Teacher.findAll({where, include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']] ,transaction})
-       
+        let conditions2 = { where, include: [{ model: User, attributes: { exclude: ['password', 'expireToken', 'resentPassword', 'passwordResetOtp'] }, include: [{ model: Role }] }, { model: Address }], order: [['updatedAt', 'DESC']],subQuery, transaction }
+
+        const obj = {
+            page: req.query.page,
+            model: Teacher,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const teachers = await paginationfun.pagination(obj)
         await transaction.commit();
-        res.status(200).json({
-            teachers: teachers,
-            success: true,
-            message: "Get All Data Success"
-        });
+        if (teachers) {
+            res.status(200).json({
+                teachers: teachers,
+                success: teachers.rows.length ? true : false,
+                message: teachers.rows.length ?"Get All Data Success": "No data Found",
+       
+            });
+        }
     } catch (error) {
         console.log(error);
         await transaction.rollback();

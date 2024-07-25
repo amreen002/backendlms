@@ -8,7 +8,7 @@ router.get('/question',checkauth, getLogedInUser,question.findAll);
 
 router.get('/reportscard',checkauth, getLogedInUser,question.ReportsCard);
 
-router.get('/question/:questionId', /* checkauth, getLogedInUser, */question.findOne);
+router.get('/question/:questionId', checkauth, getLogedInUser, question.findOne);
 
 router.patch('/question/:questionId', checkauth, getLogedInUser, question.update);
 

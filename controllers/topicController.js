@@ -1,5 +1,6 @@
 
 const {TelecallerDepartment, Topic ,User ,Courses,Role,sequelize} = require('../models')
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
@@ -48,6 +49,7 @@ exports.findAll = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         let where;
+        let subQuery = false
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
             where: { id: loggedInUserId }, attributes: [
@@ -75,13 +77,34 @@ exports.findAll = async (req, res) => {
         else {
             where = { userId: loggedInUserId }
         }
-        let topic = await Topic.findAll({where ,include: [ { model: Courses }],transaction});
+        let conditions2 = {
+            where,
+            include: [{ model: Courses }],
+            order: [['updatedAt', 'DESC']],
+            subQuery: subQuery
+        }
+
+
+        const obj = {
+            page: req.query.page,
+            model: Topic,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+
+    
+    
+        const topic = await paginationfun.pagination(obj)
         await transaction.commit();
-        res.status(200).json({
-            topic: topic,
-            success: true,
-            message: "Get All Topic Data Success"
-        });
+        if (topic) {
+            return res.status(200).json({
+                success: topic.rows.length ? true : false,
+                message: topic.rows.length ? "Get All Topic Data Success" : "No data Found",
+                topic: topic,
+            })
+        }
     } catch (error) {
         console.log(error)
         await transaction.rollback();

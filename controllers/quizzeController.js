@@ -1,7 +1,7 @@
 
 const { Op, fn, col } = require('sequelize');
 const { Quize, Role, User, Categories, Teacher, Batch, sequelize, Questions,Courses,Student,CategoriesQuestion} = require('../models')
-
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
@@ -94,6 +94,7 @@ exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         let where;
+        let subQuery =false
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
             where: { id: loggedInUserId }, attributes: [
@@ -121,7 +122,7 @@ exports.findAll = async (req, res) => {
         else {
             where = { userId: loggedInUserId }
         }
-        const quizze = await Quize.findAll({
+        const conditions2 = {
             where,
             include: [
                 { model: User, include: [{ model: Role }] },
@@ -130,8 +131,10 @@ exports.findAll = async (req, res) => {
                 { model: Courses },
                 { model: Questions , include: [{ model: Student }] }
             ],
+            order: [['updatedAt', 'DESC']],
+            subQuery,
             transaction
-        });
+        }
         /* 
                 const formatTimeToAMPM = (timeString) => {
                     const date = new Date(timeString);
@@ -146,12 +149,24 @@ exports.findAll = async (req, res) => {
                     quizze[index].QuizzStartTime = formatTimeToAMPM(quizze[index].QuizzStartTime);
                     quizze[index].QuizzEndTime = formatTimeToAMPM(quizze[index].QuizzEndTime);
                 } */
+
+        const obj = {
+            page: req.query.page,
+            model: Quize,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const quizze = await paginationfun.pagination(obj)
         await transaction.commit();
+        if (quizze) {
         return res.status(200).json({
-            quizze: quizze,
-            success: true,
-            message: "Get All Quizze Data Success"
-        });
+            quizze:quizze,
+            success:quizze.rows.length ? true : false,
+            message:quizze.rows.length ? "Get All Quizze Data Success":"No data Found"
+        })
+       }
     } catch (error) {
         console.log(error);
         await transaction.rollback();

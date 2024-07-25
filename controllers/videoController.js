@@ -2,6 +2,7 @@
 
 const { Video, Courses, Topic, Categories, sequelize ,User,Role} = require('../models')
 const path =  require("path");
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
@@ -70,6 +71,7 @@ exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         let where;
+        let subQuery=false
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
             where: { id: loggedInUserId }, attributes: [
@@ -97,13 +99,26 @@ exports.findAll = async (req, res) => {
         else {
             where = { userId: loggedInUserId }
         }
-        let video = await Video.findAll({ where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }],transaction });
+        let conditions2 = { where, include: [{ model: Topic },{ model: Courses, include: [{ model: Categories }] }],order: [['updatedAt', 'DESC']],subQuery,transaction}
+        const obj = {
+            page: req.query.page,
+            model: Video,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const video = await paginationfun.pagination(obj)
+     
         await transaction.commit();
-        res.status(200).json({
-            video: video,
-            success: true,
-            message: "Get All Video Data Success"
-        });
+        if (video) {
+            res.status(200).json({
+                video: video,
+                success: video.rows.length ?true:false,
+                message: video.rows.length ?"Get All Video Data Success":"No data Found"
+            });
+        }
+
     } catch (error) {
         console.log(error)
         await transaction.rollback();

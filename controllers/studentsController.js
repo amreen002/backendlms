@@ -2,6 +2,7 @@ const path = require('path');
 const { Op, where } = require('sequelize');
 const bcrypt = require('bcrypt');
 const { Student, User, Role, Address, Courses,Batch,Teacher, sequelize } = require('../models')
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     const {
@@ -131,7 +132,8 @@ exports.findAll = async (req, res) => {
              }
         */
         let where ;
-        let students
+        let subQuery=false
+
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({ where: { id: loggedInUserId }, attributes: [
             "id",
@@ -155,9 +157,13 @@ exports.findAll = async (req, res) => {
         else {
             where = { roleId: loggedInUserId }
         }
+
+           
+     
+        let conditions2
         if (req.query.Instructor) {
             if (loggedInUser.Role.Name == "Instructor"){
-                students = await Student.findAll({
+                conditions2 = {
                     attributes: { exclude: ['Password'] },
                     include: [{
                         model: User,include:
@@ -167,11 +173,13 @@ exports.findAll = async (req, res) => {
                     { model: Courses },
                     { model: Batch ,where :{InstructorId: loggedInUser.teacherId },  include: [{model: Teacher,}]},
                     ],
-                    order: [['updatedAt', 'DESC']],transaction
-                })
+                    order: [['updatedAt', 'DESC']],
+                    subQuery,
+                    transaction
+                }
             }
         }else{
-            students = await Student.findAll({
+            conditions2 = {
                 where,
                 attributes: { exclude: ['Password'] },
                 include: [{
@@ -182,17 +190,29 @@ exports.findAll = async (req, res) => {
                 { model: Courses },
                 { model: Batch,  include: [{model: Teacher,}]},
                 ],
-                order: [['updatedAt', 'DESC']],transaction
-            })
+                order: [['updatedAt', 'DESC']],
+                subQuery,
+                transaction
+            }
         }
-      
-      
+        const obj = {
+            page: req.query.page,
+            model: Student,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+          }
+        const students = await paginationfun.pagination(obj)
         await transaction.commit();
-        res.status(200).json({
-            students: students,
-            success: true,
-            message: "Get All Data Success"
-        });
+        if (students) {
+            res.status(200).json({
+                students: students,
+                success: students.rows.length ?true:false,
+                message: students.rows.length ?"Get All Data Success":"Not Data Found"
+            });
+        }
+
     } catch (error) {
         console.log(error);
         await transaction.rollback();

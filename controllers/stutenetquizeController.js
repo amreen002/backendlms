@@ -4,13 +4,25 @@ exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         let studentsquize
-        const studentQuizEntries = req.body.answers.map(answer => ({
-            QuizeId: req.body.QuizeId,
-            QuestionId: answer.QuestionId,
-            AnswersStudent: answer.AnswersStudent,
-            StudentId: req.profile.id,
-            TimeTaken: answer.TimeTaken,
-        }));
+
+
+        const studentQuizEntries = req.body.answers.map(answer => {
+            // Convert seconds to formatted time
+            const seconds = answer.TimeTaken; // Assuming answer.TimeTaken is in seconds
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const remainingSeconds = seconds % 60;
+            const formattedTime = `${hours}:${minutes}:${remainingSeconds}`;
+        
+            return {
+                QuizeId: req.body.QuizeId,
+                QuestionId: answer.QuestionId,
+                AnswersStudent: answer.AnswersStudent,
+                StudentId: req.profile.id,
+                TimeTaken: formattedTime, // Use the formatted time here
+            };
+        });
+        
 
         for (let studentQuiz of studentQuizEntries) {
             const question = await Questions.findOne({ where: { id: studentQuiz.QuestionId } });
@@ -48,7 +60,7 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const studentsquize = await StudentQuize.findOne({ where: { id: req.params.studentsId }, order: [['updatedAt', 'DESC']], transaction });
+        const studentsquize = await StudentQuize.findOne({ where: { id: req.params.studentquizeId }, order: [['updatedAt', 'DESC']], transaction });
         await transaction.commit();
         res.status(200).json({
             studentsquize: studentsquize,
@@ -100,9 +112,82 @@ exports.findAll = async (req, res) => {
         } else {
             where = { StudentId: loggedInUserId };
         }
-
+        
         studentsquize = await StudentQuize.findAll({
             where,
+            order: [['updatedAt', 'DESC']],
+            transaction,
+        });
+
+        let totalIncorrectCount = 0;
+        let totalCorrectCount = 0;
+        let totalCount = studentsquize.length;
+
+        // Sum the incorrect and correct counts
+        studentsquize.forEach(quize => {
+            const correct = quize.Correct ? 1 : 0; 
+            const incorrect = quize.Incorrect ? 1 : 0; 
+            totalIncorrectCount += parseInt(incorrect, 10) || 0;
+            totalCorrectCount += parseInt(correct, 10) || 0;
+        });
+
+        await transaction.commit();
+        res.status(200).json({
+            studentsquize: studentsquize,
+            totalCount: totalCount,
+            totalIncorrectCount: totalIncorrectCount,
+            totalCorrectCount: totalCorrectCount,
+            success: true,
+            message: "Get All Data Success"
+        });
+    } catch (error) {
+        console.log(error);
+        await transaction.rollback();
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: "Failed to retrieve data"
+        });
+    }
+};
+
+exports.findAllQuize = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        let where;
+        let studentsquize;
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId },
+            attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ],
+            include: [{ model: Role }],
+            transaction
+        });
+
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator") {
+            where = {};
+        } else {
+            where = { StudentId: loggedInUserId };
+        }
+
+        studentsquize = await StudentQuize.findAll({
+            where:{QuizeId:req.params.studentquizeId },
             order: [['updatedAt', 'DESC']],
             transaction,
         });

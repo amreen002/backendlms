@@ -7,7 +7,7 @@ router.post('/addteachers', checkauth, getLogedInUser,uploadImage.single('file')
 
 router.get('/listteachers',checkauth, getLogedInUser, teachers.findAll);
 
-router.get('/listteachers/:teachersId',/*  checkauth, getLogedInUser, */teachers.findOne);
+router.get('/listteachers/:teachersId',  checkauth, getLogedInUser,teachers.findOne);
 
 router.patch('/viewsteachers/:teachersId', checkauth, getLogedInUser,uploadImage.single('file'), teachers.update);
 

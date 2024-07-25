@@ -75,6 +75,8 @@ app.get('/', (req, res) => {
 });
 
 
+
+
 const PORT = process.env.PORT || 8080;  // Use environment variable for port or default to 8080
 const HOST = process.env.HOST || '0.0.0.0';  // Use environment variable for host or default to '0.0.0.0'
 

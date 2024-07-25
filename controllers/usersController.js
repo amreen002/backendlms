@@ -9,6 +9,7 @@ require('dotenv').config()
 const bcrypt = require('bcrypt');
 const { where } = require('sequelize');
 const secretkey = process.env.SESSION_SECRET || 'technogazwersecret'
+let paginationfun = require("../controllers/paginationController");
 
 /* let transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVICE_HOST,
@@ -262,6 +263,9 @@ exports.findOne = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
+
+        let subQuery = false
+
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
             where: { id: loggedInUserId }, attributes: [
@@ -297,8 +301,8 @@ exports.findAll = async (req, res) => {
             }
         }
 
-
-        let userchild = await User.findAll({
+        let conditions2 = {
+            where,
             where, attributes: [
                 "id",
                 "name",
@@ -316,14 +320,48 @@ exports.findAll = async (req, res) => {
                 "message",
                 "active",
                 "createdAt",
-            ], include: [{ model: Role }, { model: Address }]
-        });
+            ], include: [{ model: Role }, { model: Address }],
+            order: [['updatedAt', 'DESC']],
+            subQuery: subQuery
+        }
+        const obj = {
+            page: req.query.page,
+            model: User,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));");
 
-        if (req.query.LeadGetAllowated) {
-            return res.status(200).json({ users: userchild, success: true, message: "Successfully retrieved all users" });
-        } else {
-            let allUsers = [loggedInUser, ...userchild];
-            return res.status(200).json({ users: allUsers, success: true, message: "Successfully retrieved all users" });
+
+        const userchild = await paginationfun.pagination(obj)
+        if (userchild) {
+            if (req.query.LeadGetAllowated) {
+                return res.status(200).json({
+                    success: userchild.rows.length ? true : false,
+                    message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
+                    users: userchild
+                });
+            } else {
+                if (userchild && Array.isArray(userchild.rows)) {
+               
+                    const obj = {
+                        page: req.query.page,
+                        model: User,
+                        headers: req.headers.host,
+                        split: req.url.split("?")[0],
+                        condtion: conditions2,
+                        whereData: where
+                    }
+                    const allUserdata = await paginationfun.pagination(obj)
+                   
+                    return res.status(200).json({
+                        users:[loggedInUser, ...allUserdata.rows] , success: allUserdata.rows.length ? true :false,
+                        message: allUserdata.rows.length ? "Successfully retrieved all users" : "No data Found",
+                    });
+                }
+            }
         }
 
     } catch (error) {

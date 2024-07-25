@@ -2,6 +2,7 @@
 const { Op } = require('sequelize')
 const path =  require("path");
 const { Lession, Role, User ,Batch, Topic ,Courses,Categories,sequelize} = require('../models');
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
@@ -67,6 +68,7 @@ exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         let where;
+        let subQuery =false
         const loggedInUserId = req.profile.id;
         const loggedInUser = await User.findOne({
             where: { id: loggedInUserId }, attributes: [
@@ -94,13 +96,24 @@ exports.findAll = async (req, res) => {
         else {
             where = { userId: loggedInUserId }
         }
-        let lession = await Lession.findAll({ where, include: [{ model: Topic },{model:Courses,include: [{model:Categories},{  model: Batch}] }],transaction});
-        await transaction.commit();
+        let conditions2 =  { where, include: [{ model: Topic },{model:Courses,include: [{model:Categories},{  model: Batch}] }],order: [['updatedAt', 'DESC']],subQuery,transaction}
+    
+        const obj = {
+            page: req.query.page,
+            model: Lession,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const lession = await paginationfun.pagination(obj)
+        await transaction.commit(); 
+        if(lession){
         res.status(200).json({
             lession: lession,
-            success: true,
-            message: "Get All Lession Data Success"
-        });
+            success: lession.rows.length ?true:false,
+            message: lession.rows.length ?"Get All Lession Data Success":"No data Found"
+        });}
     } catch (error) {
         console.log(error)
         await transaction.rollback();
