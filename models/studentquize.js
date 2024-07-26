@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     AnswersStudent: {
       field: 'AnswersStudent',
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
     },
     Incorrect: {
       field: 'Incorrect',

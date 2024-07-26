@@ -14,25 +14,47 @@ exports.create = async (req, res) => {
             const remainingSeconds = seconds % 60;
             const formattedTime = `${hours}:${minutes}:${remainingSeconds}`;
         
+            // Initialize element as an empty array
+            let element = [];
+        
+            // Check if AnswersStudent is an array before using length
+            if (Array.isArray(answer.AnswersStudent)) {
+                element = answer.AnswersStudent; // Keep as array
+            } else {
+                // Handle the case where AnswersStudent is not an array
+                element = answer.AnswersStudent; // Convert to array
+            }
+        
+            // Convert element to a string (JSON format)
+            const elementString = JSON.stringify(element);
+        
             return {
                 QuizeId: req.body.QuizeId,
                 QuestionId: answer.QuestionId,
-                AnswersStudent: answer.AnswersStudent,
+                AnswersStudent: elementString, // Save as string
                 StudentId: req.profile.id,
                 TimeTaken: formattedTime, // Use the formatted time here
             };
         });
         
-
         for (let studentQuiz of studentQuizEntries) {
             const question = await Questions.findOne({ where: { id: studentQuiz.QuestionId } });
-            if (question.Answer === studentQuiz.AnswersStudent) {
-                studentQuiz.Correct = 1;
-                studentQuiz.Incorrect = 0;
+            
+            let isCorrect = false;
+            const studentAnswer = JSON.parse(studentQuiz.AnswersStudent);
+            // Check if both question and student answers are arrays
+            if (Array.isArray(question.Answer) && Array.isArray(studentAnswer)) {
+                // Sort and compare arrays
+                const sortedQuestionAnswer = question.Answer.slice().sort();
+                const sortedStudentAnswer = studentAnswer.slice().sort();
+                isCorrect = JSON.stringify(sortedQuestionAnswer) === JSON.stringify(sortedStudentAnswer);
             } else {
-                studentQuiz.Correct = 0;
-                studentQuiz.Incorrect = 1;
+                // For non-array answers
+                isCorrect = question.Answer === studentAnswer;
             }
+
+            studentQuiz.Correct = isCorrect ? 1 : 0;
+            studentQuiz.Incorrect = isCorrect ? 0 : 1;
             studentsquize= await StudentQuize.create(studentQuiz, { transaction });
         }
         await transaction.commit();

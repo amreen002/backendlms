@@ -48,7 +48,7 @@ exports.findOne = async (req, res) => {
     try {
         let Students;
         const questions = await Questions.findOne({ where: { id: req.params.questionId }, include: [{ model: CategoriesQuestion }, { model: Quize }], transaction });
-        if (questions.studentId) {
+        if (Array.isArray(questions.studentId)) {
             Students = await Student.findAll({
                 where: { id: questions.studentId },
                 transaction
