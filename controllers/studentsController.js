@@ -22,6 +22,11 @@ exports.create = async (req, res) => {
         if (!Password) {
             throw new Error('Password is required');
         }
+        let useremail = await Student.findOne({where:{Email:req.body.Email},transaction})
+        if (useremail) {
+            await transaction.rollback();
+            return res.status(404).json({ message:"The email address you entered is already associated with an account. Please use a different email or log in with your existing account." });
+        }
         const hashedPassword = await bcrypt.hash(Password, 10);
         const studentData = {
             Name,
@@ -68,6 +73,7 @@ exports.create = async (req, res) => {
             AddressableId: address.id,
             image: students.image,
             src:  req.file? req.file.path :null,
+            lastname:students.LastName
         };
 
         const user = await User.create(userData, { transaction });
@@ -99,8 +105,11 @@ exports.findOne = async (req, res) => {
     try {
         const students = await Student.findOne({ where: 
             { id: req.params.studentsId}, attributes: { exclude: ['Password'] },
-            include: [{ model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] }, include: [{ model: Role }] }, { model: Courses },
-            { model: Batch,  include: [{model: Teacher,}]}], order: [['updatedAt', 'DESC']],transaction });
+            include: [
+                { model: User,attributes: { exclude: ['password','expireToken','resentPassword','passwordResetOtp'] },include: [{ model: Role }] }, { model: Courses },
+                { model: Batch,  include: [{model: Teacher,}]},
+                { model: Address },
+            ], order: [['updatedAt', 'DESC']],transaction });
             await transaction.commit();
             res.status(200).json({
             students: students,
@@ -227,14 +236,25 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
+
+
        const userfindstudent= await Student.findOne({ where: { id: req.params.studentsId }, order: [['updatedAt', 'DESC']] });
+       
        if (!userfindstudent) {
         await transaction.rollback();
         return res.status(404).json({
             success: false,
             message: "Associated User Find Student not found"
-        });
-    }
+        })
+      }
+      const useremail = await User.findOne({ where: { Email: req.body.Email, id: { [Op.ne]: req.params.studentsId } }, transaction });
+      if (useremail) {
+          await transaction.rollback();
+          return res.status(400).json({ // Corrected the status code to 400 for a validation error
+              success: false,
+              message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."
+          });
+      }
        let data = {
             Name: req.body.Name,
             LastName: req.body.LastName,
@@ -289,6 +309,7 @@ exports.update = async (req, res) => {
             AddressableId: updatedStudent.AddressableId,
             image: req.file ? req.file.filename : updatedStudent.image,
             src: req.file ? req.file.path : user.src,
+            lastname:updatedStudent.LastName
         };
 
         await User.update(updatedUserData, { where: { id: user.id }, transaction });

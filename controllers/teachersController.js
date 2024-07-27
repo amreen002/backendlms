@@ -13,7 +13,11 @@ exports.create = async (req, res) => {
         if (!Password) {
             throw new Error('Password is required');
         }
-
+        let useremail = await Teacher.findOne({where:{Email:req.body.Email},transaction})
+        if (useremail) {
+            await transaction.rollback();
+            return res.status(404).json({ message:"The email address you entered is already associated with an account. Please use a different email or log in with your existing account." });
+        }
         const hashedPassword = await bcrypt.hash(Password, 10);
 
         const teacherData = {
@@ -62,6 +66,7 @@ exports.create = async (req, res) => {
             AddressableId: address.id,
             image: teachers.image,
             src: req.file ? req.file.path : null,
+            lastname: teachers.LastName,
         };
 
         const user = await User.create(userData, { transaction });
@@ -227,6 +232,16 @@ exports.update = async (req, res) => {
                 message: "Teacher not found"
             });
         }
+         // Check if another teacher with the same email exists
+         const useremail = await Teacher.findOne({ where: { Email: req.body.Email, id: { [Op.ne]: teacherId } }, transaction });
+         if (useremail) {
+             await transaction.rollback();
+             return res.status(400).json({ // Corrected the status code to 400 for a validation error
+                 success: false,
+                 message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."
+             });
+         }
+ 
 
         // Prepare the update data
         const updatedTeacherData = {
@@ -279,7 +294,8 @@ exports.update = async (req, res) => {
             studentId: 0,
             AddressableId: teacherId,
             image: updatedTeacherData.image,
-            src: req.file ? req.file.path : user.src
+            src: req.file ? req.file.path : user.src,
+            lastname: updatedTeacherData.LastName,
         };
 
         // Update the user

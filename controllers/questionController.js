@@ -155,14 +155,37 @@ exports.findAll = async (req, res) => {
                         )
                         FROM questions AS inner_q
                         WHERE inner_q.QuizzeId = qz.id
+                    ),
+                    'courses', (
+                        SELECT JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', courses.id,
+                                'name', courses.name,
+                                'topics', (
+                                    SELECT JSON_ARRAYAGG(
+                                        JSON_OBJECT(
+                                            'id', topics.id,
+                                            'name', topics.name,
+                                            'CoursesId', topics.CoursesId
+                                        )
+                                    )
+                                    FROM topics
+                                    WHERE topics.CoursesId = courses.id
+                                )
+                            )
+                        )
+                        FROM courses
+                        WHERE courses.id = qz.CourseId
                     )
                 ) AS Quize
             FROM questions q
             LEFT JOIN categoriesquestions cq ON q.CategoryId = cq.id
             LEFT JOIN quizes qz ON q.QuizzeId = qz.id
             LEFT JOIN users u ON q.userId = u.id
-              WHERE JSON_CONTAINS(q.studentId, '["${studentId}"]', '$'); 
+            LEFT JOIN courses ON courses.id = qz.CourseId
+            WHERE JSON_CONTAINS(q.studentId, '["${studentId}"]', '$'); 
         `;
+        
         
 
             questions = await sequelize.query(query, { type: sequelize.QueryTypes.SELECT, transaction });

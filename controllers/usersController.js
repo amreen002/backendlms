@@ -39,8 +39,13 @@ exports.create = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ message: 'Department role not found' });
         }
+        let useremail = await User.findOne({where:{email:req.body.email},transaction})
+        if (useremail) {
+            await transaction.rollback();
+            return res.status(404).json({ message:  "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."});
+        }
 
-        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department','Super Admin'].includes(departmentRole.Name)) {
             roleWiseUsers = 'Admin';
         } else if (departmentRole.Name === 'Telecaller Team') {
             roleWiseUsers = 'Sub Admin';
@@ -50,6 +55,7 @@ exports.create = async (req, res) => {
         /* Users create */
         let data = {
             name: req.body.name,
+            lastname: req.body.lastname,
             userName: req.body.userName,
             phoneNumber: req.body.phoneNumber,
             email: req.body.email,
@@ -95,6 +101,7 @@ exports.create = async (req, res) => {
                 YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
                 image:users.image,
                 CousesId:req.body.CousesId,
+                LastName: users.LastName,
             };
             const teacher = await Teacher.create(teacherData, { transaction });
             await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -116,6 +123,7 @@ exports.create = async (req, res) => {
                 Date: req.body.Date,
                 BatchId: req.body.BatchId,
                 image:users.image,
+                LastName: users.LastName,
                
             };
             const students = await Student.create(studentData, { transaction });
@@ -137,6 +145,7 @@ exports.create = async (req, res) => {
                     Date: req.body.Date,
                     BatchId: req.body.BatchId,
                     image:users.image,
+                    LastName: users.LastName,
                 };
                 const students = await Student.create(studentData, { transaction });
                 await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -156,6 +165,7 @@ exports.create = async (req, res) => {
                     YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
                     image:users.image,
                     CousesId:req.body.CousesId,
+                    LastName: users.LastName,
                 };
                 const teacher = await Teacher.create(teacherData, { transaction });
                 await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -196,6 +206,7 @@ exports.findOne = async (req, res) => {
             attributes: [
                 "id",
                 "name",
+                "lastname",
                 "userName",
                 "phoneNumber",
                 "email",
@@ -271,6 +282,7 @@ exports.findAll = async (req, res) => {
             where: { id: loggedInUserId }, attributes: [
                 "id",
                 "name",
+                "lastname",
                 "userName",
                 "phoneNumber",
                 "email",
@@ -306,6 +318,7 @@ exports.findAll = async (req, res) => {
             where, attributes: [
                 "id",
                 "name",
+                "lastname",
                 "userName",
                 "phoneNumber",
                 "email",
@@ -381,6 +394,14 @@ exports.update = async (req, res) => {
         if (!existingUser) {
             return res.status(404).json({ message: 'Existing profile not found' });
         }
+        const useremail = await User.findOne({ where: { email: req.body.email, id: { [Op.ne]: req.params.usersId } }, transaction });
+        if (useremail) {
+            await transaction.rollback();
+            return res.status(400).json({ // Corrected the status code to 400 for a validation error
+                success: false,
+                message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."
+            });
+        }
 
         const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
         if (!departmentRole) {
@@ -388,7 +409,7 @@ exports.update = async (req, res) => {
             return res.status(404).json({ message: 'Department role not found' });
         }
 
-        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department'].includes(departmentRole.Name)) {
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department','Super Admin'].includes(departmentRole.Name)) {
             roleWiseUsers = 'Admin';
         } else if (departmentRole.Name === 'Telecaller Team') {
             roleWiseUsers = 'Sub Admin';
@@ -398,6 +419,7 @@ exports.update = async (req, res) => {
 
         const data = {
             name: req.body.name,
+            lastname:req.body.lastname,
             userName: req.body.userName,
             phoneNumber: req.body.phoneNumber,
             email: req.body.email,
@@ -449,6 +471,7 @@ exports.update = async (req, res) => {
                 YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
                 image:updatedUser.image,
                 CousesId:req.body.CousesId,
+                LastName: updatedUser.LastName,
             };
 
             const teacher = await Teacher.update(teacherData, { where: { id: updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
@@ -467,6 +490,7 @@ exports.update = async (req, res) => {
                 Date: req.body.Date,
                 BatchId: req.body.BatchId,
                 image:updatedUser.image,
+                LastName: updatedUser.LastName,
             };
             const student = await Student.update(studentData, { where: { id: updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
             await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
@@ -485,6 +509,7 @@ exports.update = async (req, res) => {
                     Date:req.body.Date,
                     BatchId:req.body.BatchId,
                     image:updatedUser.image,
+                    LastName: updatedUser.LastName,
                   };
                   const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
                   await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
@@ -503,6 +528,7 @@ exports.update = async (req, res) => {
                     YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
                     image:updatedUser.image,
                     CousesId:req.body.CousesId,
+                    LastName: updatedUser.LastName,
                   };
                   const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
                   await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });

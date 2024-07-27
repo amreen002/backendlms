@@ -6,6 +6,7 @@ const secretkey = "token"
 const session = require('express-session');
 const { Col } = require('sequelize/lib/utils');
 const { Console } = require('console');
+const { where } = require('sequelize');
 
 exports.login = async (req, res) => {
     try {
@@ -67,15 +68,20 @@ exports.signup = async (req, res) => {
     try {
         let password = req.body.password;
         let roleWiseUsers
-        let departmentRoleName = await Role.findOne({ where: { id: req.body.departmentId } })
+        let departmentRoleName = await Role.findOne({ where: { id: req.body.departmentId },transaction })
         if (departmentRoleName.Name == 'Admin' || departmentRoleName.Name == 'Instructor' || departmentRoleName.Name == 'Student' || departmentRoleName.Name == 'Guest/Viewer' || departmentRoleName.Name == 'Sale Department' || departmentRoleName.Name == 'Telecaller Department' || departmentRoleName.Name == 'Front Desk' || departmentRoleName.Name == 'Receptions Desk' || departmentRoleName.Name == 'Counselor Department' || departmentRoleName.Name == 'Account Department') {
             roleWiseUsers = 'Admin';
         } else if (departmentRoleName.Name == 'Telecaller Team') {
             roleWiseUsers = 'Sub Admin';
         }
-
+        let useremail = await User.findOne({where:{email:req.body.email},transaction})
+        if (useremail) {
+            await transaction.rollback();
+            return res.status(404).json({ message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account." });
+        }
         let data = {
             name: req.body.name,
+            lastname: req.body.lastname,
             userName: req.body.userName,
             phoneNumber: req.body.phoneNumber,
             email: req.body.email,
@@ -102,6 +108,7 @@ exports.signup = async (req, res) => {
                 PhoneNumber:users.phoneNumber,
                 roleId: users.id,
                 image:users.image,
+                LastName: users.LastName,
             };
             const teacher = await Teacher.create(teacherData,{transaction});
             await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -114,7 +121,8 @@ exports.signup = async (req, res) => {
                 Username:users.userName,
                 PhoneNumber:users.phoneNumber,
                 roleId:users.id, 
-                image:users.image
+                image:users.image,
+                LastName: users.LastName,
             };
            const students = await Student.create(studentData,{transaction});
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -128,7 +136,8 @@ exports.signup = async (req, res) => {
                     Username:users.userName,
                     PhoneNumber:users.phoneNumber,
                     roleId:users.id, 
-                    image:users.image
+                    image:users.image,
+                    LastName: users.LastName,
                 };
                const students = await Student.create(studentData,{transaction});
                 await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -143,6 +152,7 @@ exports.signup = async (req, res) => {
                     PhoneNumber:users.phoneNumber,
                     roleId: users.id,  
                     image:users.image,
+                    LastName: users.LastName,
                 };
                 const teacher = await Teacher.create(teacherData,{transaction});
                 await User.update({ teacherId: teacher.id }, { where: { id: users.id }, transaction });
@@ -181,6 +191,7 @@ exports.findOne = async (req, res) => {
             attributes: [
                 "id",
                 "name",
+                "lastname",
                 "userName",
                 "phoneNumber",
                 "email",
@@ -254,7 +265,15 @@ exports.update = async (req, res) => {
       if (!existingUser) {
         return res.status(404).json({ message: 'Existing profile not found' });
       }
-  
+      const useremail = await User.findOne({ where: { email: req.body.email, id: { [Op.ne]: req.params.usersId } }, transaction });
+      if (useremail) {
+          await transaction.rollback();
+          return res.status(400).json({ // Corrected the status code to 400 for a validation error
+              success: false,
+              message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."
+          });
+      }
+
       const departmentRole = await Role.findOne({ where: { id: req.body.departmentId }, transaction });
       if (!departmentRole) {
         await transaction.rollback();
@@ -271,6 +290,7 @@ exports.update = async (req, res) => {
 
       const data = {
         name: req.body.name,
+        lastname:req.body.lastname,
         userName: req.body.userName,
         phoneNumber: req.body.phoneNumber,
         email: req.body.email,
@@ -315,7 +335,8 @@ exports.update = async (req, res) => {
           TeacherType:req.body.TeacherType,
           CousesId:req.body.CousesId,
           YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
-          image:updatedUser.image
+          image:updatedUser.image,
+          LastName: updatedUser.LastName,
         };
         const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
@@ -333,7 +354,8 @@ exports.update = async (req, res) => {
           CoursesId:req.body.CoursesId,
           Date:req.body.Date,
           BatchId:req.body.BatchId,
-          image:updatedUser.image
+          image:updatedUser.image,
+          LastName: updatedUser.LastName,
         };
         const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
         await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
@@ -351,6 +373,7 @@ exports.update = async (req, res) => {
                 CoursesId:req.body.CoursesId,
                 Date:req.body.Date,
                 BatchId:req.body.BatchId,
+                LastName: updatedUser.LastName,
               };
               const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
               await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
@@ -368,6 +391,7 @@ exports.update = async (req, res) => {
                 TeacherType:req.body.TeacherType,
                 YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
                 CousesId:req.body.CousesId,
+                LastName: updatedUser.LastName,
               };
               const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
               await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });

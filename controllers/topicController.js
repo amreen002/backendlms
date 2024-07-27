@@ -142,22 +142,43 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const topic = await Topic.destroy({ where: { id: req.params.topicId },transaction });
+        // Attempt to delete the topic
+        const topic = await Topic.destroy({ where: { id: req.params.topicId }, transaction });
+
+        // If no rows were affected, the topic was not found
+        if (!topic) {
+            await transaction.rollback();
+            return res.status(404).json({
+                success: false,
+                message: 'Subject not found'
+            });
+        }
+
         await transaction.commit();
         res.status(200).json({
-            topic: topic,
             success: true,
-            message: "Delete Successfully Topic"
+            message: "Deleted Subject successfully"
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
+
+        // Check if the error is a foreign key constraint error
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete subject because it is referenced by module. Please remove the associated module first.'
+            });
+        }
+
         await transaction.rollback();
         res.status(500).json({
-            error: error,
             success: false,
-            message: 'Topic not found'
+            message: 'An error occurred while deleting the subject',
+            error: error
         });
     }
-}
+};
+
 
 
