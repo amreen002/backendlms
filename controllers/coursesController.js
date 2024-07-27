@@ -54,6 +54,14 @@ const cleanUpArrayFields = (data) => {
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
+        const coursename = await Courses.findOne({ where: { name: req.body.name} ,transaction});
+        if (coursename) {
+            await transaction.rollback();
+            return res.status(400).json({ // Corrected the status code to 400 for a validation error
+                success: false,
+                message: "Course title already exists" 
+            });
+        }
         let data = {
             name: req.body.name,
             userId: req.profile.id,
@@ -672,6 +680,15 @@ exports.update = async (req, res) => {
         if (!course) {
             return res.status(404).json({ message: 'Existing Class Upload not found' });
         }
+        const coursename = await User.findOne({ where: { name: req.body.name, id: { [Op.ne]: req.params.coursesId } }, transaction });
+        if (coursename) {
+            await transaction.rollback();
+            return res.status(400).json({ // Corrected the status code to 400 for a validation error
+                success: false,
+               message: "Course title already exists"
+            });
+        }
+  
         let updatedData = {
             name: req.body.name,
             userId: req.profile.id,
