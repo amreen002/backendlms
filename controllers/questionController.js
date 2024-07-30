@@ -161,6 +161,7 @@ exports.findAll = async (req, res) => {
                             JSON_OBJECT(
                                 'id', courses.id,
                                 'name', courses.name,
+                                'Description',courses.Description,
                                 'topics', (
                                     SELECT JSON_ARRAYAGG(
                                         JSON_OBJECT(
