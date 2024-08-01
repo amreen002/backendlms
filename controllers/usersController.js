@@ -302,7 +302,7 @@ exports.findAll = async (req, res) => {
         let where = {};
 
         if (req.query.LeadGetAllowated) {
-            if (loggedInUser.Role.Name == 'Telecaller Department' || loggedInUser.Role.Name == 'Telecaller Team') {
+            if (loggedInUser.Role.Name == 'Telecaller Department' || loggedInUser.Role.Name == 'Telecaller Team'||loggedInUser.Role.Name == 'Super Admin') {
                 where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
             }
         } else {

@@ -111,8 +111,34 @@ exports.delete = async (req, res) => {
 exports.TeamFindAll = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const roleId = req.profile.id;
-        const department = await SaleTeam.findOne({ where: { roleId: roleId }, include: [{ model: User,include: [{ model: Role }]  }],transaction });
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }],
+            transaction
+
+        });
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin" )
+            where = {}
+        else {
+            where = { roleId: loggedInUserId }
+        }
+        const department = await SaleTeam.findOne({ where, include: [{ model: User,include: [{ model: Role }]  }],transaction });
         if (!department) {
             await transaction.rollback();
             return res.status(404).json({
