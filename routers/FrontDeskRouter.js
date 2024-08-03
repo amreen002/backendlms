@@ -14,4 +14,8 @@ router.delete('/deletefrontdesk/:frontdeskId', checkauth, getLogedInUser, frontd
 
 router.get('/listcountry', checkauth, getLogedInUser,  frontdesk.country);
 
+router.get('/state', checkauth, getLogedInUser,  frontdesk.state);
+
+router.get('/city', checkauth, getLogedInUser,  frontdesk.city);
+
 module.exports = router;

@@ -248,3 +248,45 @@ exports.country = async (req, res) => {
     }
 };
 
+
+exports.state = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        let state = await Staties.findAll({  include: [{ model: Cities }]  ,transaction});
+        await transaction.commit();
+        res.status(200).json({
+            state: state,
+            success: true,
+            message: "Get All Data Success"
+        });
+    } catch (error) {
+        console.log(error);
+        await transaction.rollback();
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: "Failed to retrieve data"
+        });
+    }
+};
+
+exports.city = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        let city = await Cities.findAll({transaction});
+        await transaction.commit();
+        res.status(200).json({
+            city: city,
+            success: true,
+            message: "Get All Data Success"
+        });
+    } catch (error) {
+        console.log(error);
+        await transaction.rollback();
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: "Failed to retrieve data"
+        });
+    }
+};

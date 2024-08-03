@@ -4,8 +4,11 @@ const { SaleTeam, User ,sequelize } = require('../models')
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
-
+        if (req.body.roleId) {
+            req.body.telecallerPersonName="Allotted"  
+        }
         const saleteam = await SaleTeam.create(req.body,{transaction})
+        
         await transaction.commit();
         return res.status(200).json({
             saleteam: saleteam,

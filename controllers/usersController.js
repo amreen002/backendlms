@@ -302,7 +302,7 @@ exports.findAll = async (req, res) => {
         let where = {};
 
         if (req.query.LeadGetAllowated) {
-            if (loggedInUser.Role.Name == 'Telecaller Department' || loggedInUser.Role.Name == 'Telecaller Team'||loggedInUser.Role.Name == 'Super Admin') {
+            if (loggedInUser.Role.Name == 'Telecaller Department' || loggedInUser.Role.Name == 'Telecaller Team'|| loggedInUser.Role.Name == 'Counselor Department' ||loggedInUser.Role.Name == 'Super Admin') {
                 where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
             }
         } else {
@@ -345,7 +345,7 @@ exports.findAll = async (req, res) => {
             condtion: conditions2,
             whereData: where
         }
-        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));");
+        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));")
 
 
         const userchild = await paginationfun.pagination(obj)
