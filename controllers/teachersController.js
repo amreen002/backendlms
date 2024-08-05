@@ -181,7 +181,7 @@ exports.findAll = async (req, res) => {
             transaction
 
         });
-        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator")
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin")
             where = {}
         else {
             where = { roleId: loggedInUserId }

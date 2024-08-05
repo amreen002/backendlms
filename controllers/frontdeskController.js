@@ -1,6 +1,7 @@
 
 const { Op } = require('sequelize');
 const { FrontDesk, User, Role, Address, Courses, Countries, Staties, Cities, sequelize } = require('../models')
+let paginationfun = require("../controllers/paginationController");
 const nodemailer = require("nodemailer");
 const ejs = require("ejs");
 const path = require("path");
@@ -117,7 +118,7 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
-        let where = {}
+        let where;
         const search = req.query.search;
         if (search) {
             where = {
@@ -127,14 +128,52 @@ exports.findAll = async (req, res) => {
                 ],
             };
         }
-        let frontdesk = await FrontDesk.findAll({ where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] ,transaction})
 
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({ where: { id: loggedInUserId }, attributes: [
+            "id",
+            "name",
+            "userName",
+            "phoneNumber",
+            "email",
+            "assignToUsers",
+            "departmentId",
+            "teacherId",
+            "studentId",
+            "roleName",
+            "image",
+            "src",
+            "address",
+            "message",
+            "active",
+        ], include: [{ model: Role }] ,transaction});
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin") 
+            where = {}  
+        else {
+            where = { roleId: loggedInUserId }
+        }
+
+        let conditions2 = { where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']] ,transaction}
+        
+        const obj = {
+            page: req.query.page,
+            model: FrontDesk,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const frontdesk = await paginationfun.pagination(obj)
         await transaction.commit();
-        res.status(200).json({
-            frontdesk: frontdesk,
-            success: true,
-            message: "Get All Data Success"
-        });
+        if (frontdesk) {
+            res.status(200).json({
+                frontdesk: frontdesk,
+                success: frontdesk.rows.length ? true : false,
+                message: frontdesk.rows.length ? "Get All Data Success" : "No data Found",
+
+            });
+        }
+
     } catch (error) {
         console.log(error);
         await transaction.rollback();

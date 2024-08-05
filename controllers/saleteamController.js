@@ -1,6 +1,7 @@
 
 const { Op } = require('sequelize');
 const { SaleTeam, User ,sequelize } = require('../models')
+let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
@@ -51,6 +52,7 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
+        let where ={}
         const searchTerm = req.query.searchTerm;
         if (searchTerm) {
             where = {
@@ -62,13 +64,25 @@ exports.findAll = async (req, res) => {
         }
   
 
-        let saleteam = await SaleTeam.findAll({order: [['updatedAt', 'DESC']],transaction});
+        let conditions2 = {where, order: [['updatedAt', 'DESC']],transaction}
+        const obj = {
+            page: req.query.page,
+            model: SaleTeam,
+            headers: req.headers.host,
+            split: req.url.split("?")[0],
+            condtion: conditions2,
+            whereData: where
+        }
+        const saleteam = await paginationfun.pagination(obj)
         await transaction.commit();
-        res.status(200).json({
-            saleteam: saleteam,
-            success: true,
-            message: "Get All Data Success"
-        });
+        if (saleteam) {
+            res.status(200).json({
+                saleteam: saleteam,
+                success: saleteam.rows.length ? true : false,
+                message: saleteam.rows.length ?"Get All Data Success": "No data Found",
+       
+            });
+        }
     } catch (error) {
         console.log(error);
         await transaction.rollback();
