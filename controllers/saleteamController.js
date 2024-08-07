@@ -1,15 +1,34 @@
 
 const { Op } = require('sequelize');
-const { SaleTeam, User ,sequelize } = require('../models')
+const { SaleTeam, User, sequelize, Address } = require('../models')
 let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
         if (req.body.roleId) {
-            req.body.telecallerPersonName="Allotted"  
+            req.body.telecallerPersonName = "Allotted"
         }
-        const saleteam = await SaleTeam.create(req.body,{transaction})
-        
+        const saleteam = await SaleTeam.create(req.body, { transaction })
+
+        const addressData = {
+            AddressableId: saleteam.id,
+            AddressableType: "Lead",
+            AddressType: 'Current Address',
+            Address: 'Not Address',
+            City: 'Not City',
+            StateId: 0,
+            CountryId: 101,
+            DistrictId: 0,
+            ...req.body
+        };
+
+        const address = await Address.create(addressData, { transaction });
+
+        await SaleTeam.update(
+            { AddressableId: address.id },
+            { where: { id: saleteam.id }, transaction }
+        );
+
         await transaction.commit();
         return res.status(200).json({
             saleteam: saleteam,
@@ -31,7 +50,7 @@ exports.create = async (req, res) => {
 exports.findOne = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
-        const saleteam = await SaleTeam.findOne({ where: { id: req.params.saleteamId } ,order: [['updatedAt', 'DESC']],transaction});
+        const saleteam = await SaleTeam.findOne({ where: { id: req.params.saleteamId }, order: [['updatedAt', 'DESC']], transaction });
         await transaction.commit();
         res.status(200).json({
             saleteam: saleteam,
@@ -52,7 +71,7 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
-        let where ={}
+        let where = {}
         const searchTerm = req.query.searchTerm;
         if (searchTerm) {
             where = {
@@ -62,9 +81,9 @@ exports.findAll = async (req, res) => {
                 ],
             };
         }
-  
 
-        let conditions2 = {where, order: [['updatedAt', 'DESC']],transaction}
+
+        let conditions2 = { where, order: [['updatedAt', 'DESC']], transaction }
         const obj = {
             page: req.query.page,
             model: SaleTeam,
@@ -79,8 +98,8 @@ exports.findAll = async (req, res) => {
             res.status(200).json({
                 saleteam: saleteam,
                 success: saleteam.rows.length ? true : false,
-                message: saleteam.rows.length ?"Get All Data Success": "No data Found",
-       
+                message: saleteam.rows.length ? "Get All Data Success" : "No data Found",
+
             });
         }
     } catch (error) {
@@ -97,8 +116,8 @@ exports.findAll = async (req, res) => {
 exports.update = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
-        const saleteam = await SaleTeam.update(req.body, { where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']] ,transaction});
-        const sale = await SaleTeam.findOne({ where: { id: req.params.saleteamId },order: [['updatedAt', 'DESC']],transaction });
+        const saleteam = await SaleTeam.update(req.body, { where: { id: req.params.saleteamId }, order: [['updatedAt', 'DESC']], transaction });
+        const sale = await SaleTeam.findOne({ where: { id: req.params.saleteamId }, order: [['updatedAt', 'DESC']], transaction });
         await transaction.commit();
         res.status(200).json({
             saleteam: sale,

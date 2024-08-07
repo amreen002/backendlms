@@ -314,7 +314,6 @@ exports.findAll = async (req, res) => {
         }
 
         let conditions2 = {
-            where,
             where, attributes: [
                 "id",
                 "name",
@@ -345,7 +344,7 @@ exports.findAll = async (req, res) => {
             condtion: conditions2,
             whereData: where
         }
-   /*      await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));") */
+        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));")
 
 
         const userchild = await paginationfun.pagination(obj)

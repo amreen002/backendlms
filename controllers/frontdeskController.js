@@ -15,42 +15,14 @@ const generateEnquiryId = (id) => {
     return `${prefix}${paddedId}${suffix}`;
 };
 
-// Function to generate a random OTP
-function generateOTP() {
-    return crypto.randomInt(100000, 999999).toString(); // Generates a 6-digit OTP
-}
 
-// Function to send OTP via SMS
-function sendOTPViaSMS(otp, phoneNumber) {
-    // Replace the following code with your SMS service provider integration
-    console.log(`Sending OTP ${otp} to ${phoneNumber} via SMS`);
-    // Integrate your SMS service provider API here to send the OTP via SMS
-}
-let transporter = nodemailer.createTransport({
-    host: process.env.SMTP_SERVICE_HOST,
-    port: process.env.SMTP_SERVICE_PORT,
-    secure: process.env.SMTP_SERVICE_SECURE,
-    service: 'gmail',
-    auth: {
-        user: process.env.SMTP_USER_NAME,
-        pass: process.env.SMTP_USER_PASSWORD
-    },
-    tls: {
-        // Uncomment the following line to see more detailed errors
-        // secureProtocol: 'TLSv1_2_method', // Force a specific SSL/TLS version if necessary
-        rejectUnauthorized: false // This bypasses the certificate check, use it only for debugging
-    }
-});
+
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         // Create the FrontDesk entry
-
-
         let frontdesk = await FrontDesk.create(req.body, { transaction });
-
         const enquiryId = generateEnquiryId(frontdesk.id);
-
         // Update the FrontDesk entry with the generated enquiryId
         await FrontDesk.update(
             { enquiryId: enquiryId },
@@ -67,21 +39,56 @@ exports.create = async (req, res) => {
             { where: { id: frontdesk.id }, transaction }
         );
         // Commit the transaction
-
-        // Generate an OTP
-        const otp = generateOTP();
         await transaction.commit();
-        // Send the OTP via SMS
-        sendOTPViaSMS(otp, req.body.phoneNumber)
-
+        await SaleTeam.update(
+            {
+                name: frontdesk.name,
+                username: frontdesk.username,
+                lastname: frontdesk.lastname,
+                phoneNumber: frontdesk.phoneNumber,
+                email: frontdesk.email,
+                workingStatus: frontdesk.workingStatus,
+                leadPlatform: frontdesk.leadPlatform,
+                status: frontdesk.status,
+                remark: frontdesk.remark,
+                age: frontdesk.age,
+                lead_status: frontdesk.lead_status,
+                courseId: frontdesk.courseId,
+                batchId: frontdesk.batchId,
+                AddressableId: frontdesk.AddressableId,
+                date:frontdesk.date,
+                lead_status:frontdesk.lead_status
+            },
+            { where: { email: frontdesk.email } }
+        );
+        await TelecallerDepartment.update(
+            {
+                name: frontdesk.name,
+                username: frontdesk.username,
+                lastname: frontdesk.lastname,
+                phoneNumber: frontdesk.phoneNumber,
+                email: frontdesk.email,
+                workingStatus: frontdesk.workingStatus,
+                leadPlatform: frontdesk.leadPlatform,
+                status: frontdesk.status,
+                remark: frontdesk.remark,
+                age: frontdesk.age,
+                lead_status: frontdesk.lead_status,
+                courseId: frontdesk.courseId,
+                batchId: frontdesk.batchId,
+                AddressableId: frontdesk.AddressableId,
+                visitDate:frontdesk.visitDate,
+                date:frontdesk.date,
+                lead_status:frontdesk.lead_status
+            },
+            { where: { email: frontdesk.email } }
+        );
         res.status(200).json({
             frontdesk: frontdesk,
             address: address,
             success: true,
             message: "Front Desk Created Successfully"
         });
-
-
     } catch (error) {
         // Rollback the transaction in case of error
         await transaction.rollback();

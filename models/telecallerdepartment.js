@@ -23,14 +23,34 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue:0
     },
-    enquiryId: {
-      type: DataTypes.INTEGER
-    },
     name: {
       type: DataTypes.STRING
     },
+    lastname: {
+      type: DataTypes.STRING
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     roleId: {
       type: DataTypes.INTEGER
+    },
+    courseId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    batchId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    AddressableId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     age: {
       type: DataTypes.INTEGER
@@ -47,16 +67,10 @@ module.exports = (sequelize, DataTypes) => {
     leadPlatform: {
       type: DataTypes.STRING
     },
-    telecallerPersonName: {
-      type: DataTypes.STRING,
-    },
     status: {
       type: DataTypes.ENUM('1st Call', '2nd Call', '3rd Call', '4rd Call', 'Not Responding (N/R)', 'Other'),
     },
-    address: {
-      type: DataTypes.STRING
-    },
-    userRoleName: {
+    lead_status: {
       type: DataTypes.STRING
     },
     visitDate: {
@@ -65,7 +79,6 @@ module.exports = (sequelize, DataTypes) => {
     remark: {
       type: DataTypes.TEXT('long')
     }
-
 
   }, {
     sequelize,

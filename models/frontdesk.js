@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         constraints: false,
       });
       this.belongsTo(models.Courses, {
-        foreignKey: 'coursesId',
+        foreignKey: 'courseId',
         constraints: false,
       });
       this.belongsTo(models.User, {
@@ -58,8 +58,8 @@ module.exports = (sequelize, DataTypes) => {
       field: 'Education',
       type: DataTypes.ENUM('Education', 'School', 'Graduation', 'Master', 'Any other Skill')
     },
-    coursesId: {
-      field: 'coursesId',
+    courseId: {
+      field: 'courseId',
       type: DataTypes.INTEGER,
     },
     AssignEnquiry: {

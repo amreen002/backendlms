@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       this.belongsTo(models.Categories, { foreignKey: 'CourseCategoryId' });
       this.hasMany(models.Batch, { foreignKey: 'CoursesId' });
       this.hasMany(models.Student, { foreignKey: 'CoursesId' });
-      this.hasMany(models.FrontDesk, { foreignKey: 'coursesId' });
+      this.hasMany(models.FrontDesk, { foreignKey: 'courseId' });
       this.hasMany(models.Topic, { foreignKey: 'CoursesId' });
       this.hasMany(models.Lession, { foreignKey: 'CoursesId' });
       this.hasMany(models.Video, { foreignKey: 'CoursesId' });

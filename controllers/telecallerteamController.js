@@ -1,28 +1,96 @@
-
 const { TelecallerDepartment, SaleTeam, Role, User, sequelize } = require('../models')
+
+const { generateOTP, sendOTPViaEmail, sendOTPViaSMS,sendOTPViaWhatsApp } = require('./otpUtils');
 let paginationfun = require("../controllers/paginationController");
+let otpStore = {}; // Store OTP in memory with expiration time
+
 exports.create = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
+        // Create a new TelecallerDepartment
+        const telecallerdepartment = await TelecallerDepartment.create(req.body, { transaction });
+        // Generate OTP
+        const otp = generateOTP();
+        // Send OTP via email and SMS
+        sendOTPViaEmail(otp, req.body.email);
+        sendOTPViaSMS(otp, req.body.phoneNumber);
+        sendOTPViaWhatsApp(otp,  req.body.phoneNumber);
+        // Update SaleTeam
+        await SaleTeam.update(
+            {
+                name: telecallerdepartment.name,
+                lastname: telecallerdepartment.lastname,
+                phoneNumber: telecallerdepartment.phoneNumber,
+                email: telecallerdepartment.email,
+                workingStatus: telecallerdepartment.workingStatus,
+                leadPlatform: telecallerdepartment.leadPlatform,
+                status: telecallerdepartment.status,
+                remark: telecallerdepartment.remark,
+            },
+            { where: { email: telecallerdepartment.email } }
+        );
 
-        const telecallerdepartment = await TelecallerDepartment.create(req.body, { transaction })
         await transaction.commit();
         return res.status(200).json({
             telecallerdepartment: telecallerdepartment,
             success: true,
-            message: "Telecaller Team Created SuccessFully"
-        })
+            message: "Telecaller Team Created Successfully"
+        });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         await transaction.rollback();
         return res.status(500).json({
-            error: error,
+            error: error.message || "Internal Server Error",
             success: false,
-            message: "Telecaller Team  error"
-        })
+            message: "Telecaller Team creation error"
+        });
+    }
+};
+
+exports.sendOtp = async (req, res) => {
+    const { phoneNumber, email } = req.body;
+    const otp = generateOTP();
+    // Send OTP via SMS if phone number is provided
+    if (phoneNumber) {
+        sendOTPViaSMS(otp, phoneNumber);
+        sendOTPViaWhatsApp(otp, phoneNumber);
+    }
+    // Send OTP via Email if email is provided
+    if (email) {
+        sendOTPViaEmail(otp, email);
+    }
+    const expiry = Date.now() + 5 * 60 * 1000; // OTP expiry time, e.g., 5 minutes
+    // Store OTP with expiry time
+    if (phoneNumber) {
+        otpStore[phoneNumber] = { otp, expiry };
+    }
+    if (email) {
+        otpStore[email] = { otp, expiry };
+    }
+    res.status(200).json({ success: true, message: 'OTP sent successfully' });
+};
+
+
+// In your backend file
+exports.verifyOtp = async (req, res) => {
+    const { otp, phoneNumber, email } = req.body;
+    let otpData;
+    if (phoneNumber) {
+        otpData = otpStore[phoneNumber];
+    } else if (email) {
+        otpData = otpStore[email];
+    } else {
+        return res.status(400).json({ success: false, message: 'Phone number or email is required' });
     }
 
-}
+    if (otpData && otpData.otp === otp && Date.now() < otpData.expiry) {
+        delete otpStore[phoneNumber || email]; // Remove OTP after successful verification
+        return res.status(200).json({ success: true, message: 'OTP verified successfully' });
+    } else {
+        return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+};
+
 
 exports.findOne = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -75,7 +143,7 @@ exports.findAll = async (req, res) => {
             where = { roleId: loggedInUserId }
         }
 
-        let conditions2 =  { where, include: [{ model: User, include: [{ model: Role }] }],order: [['updatedAt', 'DESC']], transaction }
+        let conditions2 = { where, include: [{ model: User, include: [{ model: Role }] }], order: [['updatedAt', 'DESC']], transaction }
 
         const obj = {
             page: req.query.page,
@@ -147,8 +215,6 @@ exports.delete = async (req, res) => {
         });
     }
 }
-
-
 exports.TeamFindAll = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {

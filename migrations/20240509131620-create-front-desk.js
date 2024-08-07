@@ -41,8 +41,8 @@ module.exports = {
         field: 'Education',
         type: Sequelize.ENUM('Education', 'School', 'Graduation', 'Master', 'Any other Skill')
       },
-      coursesId: {
-        field: 'coursesId',
+      courseId: {
+        field: 'courseId',
         type: Sequelize.INTEGER,       
       },
       AssignEnquiry: {

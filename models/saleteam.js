@@ -21,14 +21,41 @@ module.exports = (sequelize, DataTypes) => {
     name: {
       type: DataTypes.STRING
     },
+    lastname: {
+      type: DataTypes.STRING
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     roleId: {
       type: DataTypes.INTEGER
     },
+    courseId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    batchId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    AddressableId: {
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
     age: {
-      type: DataTypes.INTEGER
+      type:DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     phoneNumber: {
-      type: DataTypes.BIGINT
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      defaultValue: 0,
     },
     email: {
       type: DataTypes.STRING
@@ -45,10 +72,16 @@ module.exports = (sequelize, DataTypes) => {
     remark: {
       type: DataTypes.TEXT('long')
     },
+    status: {
+      type: DataTypes.ENUM('1st Call', '2nd Call', '3rd Call', '4rd Call', 'Not Responding (N/R)', 'Other'),
+    },
+    lead_status: {
+      type: DataTypes.STRING
+    },
     TelecallerCheckbox: {
       field: 'TelecallerCheckbox',
       type: DataTypes.BOOLEAN,
-      defaultValue:0
+      defaultValue: 0
     },
 
 
