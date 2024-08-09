@@ -12,6 +12,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       this.belongsTo(models.User, { foreignKey: 'roleId' });
+      this.belongsTo(models.Address, {
+        foreignKey: 'AddressableId',
+        constraints: false,
+      });
+      this.belongsTo(models.Courses, {
+        foreignKey: 'courseId',
+        constraints: false,
+      });
     }
   }
   SaleTeam.init({
@@ -77,6 +85,12 @@ module.exports = (sequelize, DataTypes) => {
     },
     lead_status: {
       type: DataTypes.STRING
+    },
+    WhatsApp:{
+      field: 'WhatsApp',
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      defaultValue: 0,
     },
     TelecallerCheckbox: {
       field: 'TelecallerCheckbox',

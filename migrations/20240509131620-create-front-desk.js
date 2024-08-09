@@ -12,9 +12,6 @@ module.exports = {
       date: {
         type: Sequelize.DATEONLY
       },
-      uniqueId: {
-        type: Sequelize.INTEGER
-      },
       enquiryId: {
         type: Sequelize.STRING
       },
@@ -30,6 +27,9 @@ module.exports = {
       workingStatus: {
         type: Sequelize.STRING
       },
+      leadPlatform: {
+        type: Sequelize.STRING
+      },
       AddressableId: {
         field: 'AddressableId',
         type: Sequelize.INTEGER
@@ -43,7 +43,7 @@ module.exports = {
       },
       courseId: {
         field: 'courseId',
-        type: Sequelize.INTEGER,       
+        type: Sequelize.INTEGER,
       },
       AssignEnquiry: {
         field: 'AssignEnquiry',
@@ -53,8 +53,17 @@ module.exports = {
         field: 'roleId',
         type: Sequelize.INTEGER
       },
+      WhatsApp: {
+        field: 'WhatsApp',
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        defaultValue: 0,
+      },
       phoneNumber: {
-        type: Sequelize.BIGINT
+        field: 'phoneNumber',
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        defaultValue: 0,
       },
       email: {
         type: Sequelize.STRING
@@ -66,22 +75,10 @@ module.exports = {
       remark: {
         type: Sequelize.TEXT('long')
       },
-      CounselingDepartmentAllotted: {
-        field: 'CounselingDepartmentAllotted',
-        type: Sequelize.STRING
-      },
-      CounselorName: {
-        field: 'CounselorName',
-        type: Sequelize.STRING
-      },
-      CounselorRoomNo: {
-        field: 'CounselorRoomNo',
-        type: Sequelize.STRING
-      },
       TelecallerCheckbox: {
         field: 'TelecallerCheckbox',
         type: Sequelize.BOOLEAN,
-        defaultValue:0
+        defaultValue: 0
       },
       createdAt: {
         allowNull: false,

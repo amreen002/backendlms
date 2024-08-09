@@ -44,6 +44,12 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: 0
       },
+      WhatsApp:{
+        field: 'WhatsApp',
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        defaultValue: 0,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

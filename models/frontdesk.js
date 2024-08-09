@@ -29,14 +29,24 @@ module.exports = (sequelize, DataTypes) => {
     date: {
       type: DataTypes.DATEONLY,
     },
-    uniqueId: {
-      type: DataTypes.INTEGER
-    },
     enquiryId: {
       type: DataTypes.STRING
     },
     name: {
       type: DataTypes.STRING
+    },
+    lastname: {
+      type: DataTypes.STRING
+    },
+    username: {
+      type: DataTypes.STRING
+    },
+    lead_status:{
+      type: DataTypes.STRING
+    },
+    status: {
+      field: 'status',
+      type: DataTypes.ENUM('1st Call', '2nd Call', '3rd Call', '4rd Call', 'Not Responding (N/R)', 'Other'),
     },
     gender: {
       type: DataTypes.ENUM('Female', 'Male', 'Other'),
@@ -45,6 +55,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER
     },
     workingStatus: {
+      type: DataTypes.STRING
+    },
+    leadPlatform: {
       type: DataTypes.STRING
     },
     AddressableId: {
@@ -62,16 +75,27 @@ module.exports = (sequelize, DataTypes) => {
       field: 'courseId',
       type: DataTypes.INTEGER,
     },
-    AssignEnquiry: {
-      field: 'AssignEnquiry',
-      type: DataTypes.STRING
+    batchId:{
+      field: 'batchId',
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     roleId: {
       field: 'roleId',
       type: DataTypes.INTEGER
     },
+    WhatsApp:{
+      field: 'WhatsApp',
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      defaultValue: 0,
+    },
     phoneNumber: {
-      type: DataTypes.BIGINT
+      field: 'phoneNumber',
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      defaultValue: 0,
     },
     email: {
       type: DataTypes.STRING
@@ -82,18 +106,7 @@ module.exports = (sequelize, DataTypes) => {
     remark: {
       type: DataTypes.TEXT('long')
     },
-    CounselingDepartmentAllotted: {
-      field: 'CounselingDepartmentAllotted',
-      type: DataTypes.STRING
-    },
-    CounselorName: {
-      field: 'CounselorName',
-      type: DataTypes.STRING
-    },
-    CounselorRoomNo: {
-      field: 'CounselorRoomNo',
-      type: DataTypes.STRING
-    },
+
     TelecallerCheckbox: {
       field: 'TelecallerCheckbox',
       type: DataTypes.BOOLEAN,

@@ -39,13 +39,13 @@ exports.create = async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ message: 'Department role not found' });
         }
-        let useremail = await User.findOne({where:{email:req.body.email},transaction})
+        let useremail = await User.findOne({ where: { email: req.body.email }, transaction })
         if (useremail) {
             await transaction.rollback();
-            return res.status(404).json({ message:  "The email address you entered is already associated with an account. Please use a different email or log in with your existing account."});
+            return res.status(404).json({ message: "The email address you entered is already associated with an account. Please use a different email or log in with your existing account." });
         }
 
-        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department','Super Admin'].includes(departmentRole.Name)) {
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department', 'Super Admin'].includes(departmentRole.Name)) {
             roleWiseUsers = 'Admin';
         } else if (departmentRole.Name === 'Telecaller Team') {
             roleWiseUsers = 'Sub Admin';
@@ -66,8 +66,8 @@ exports.create = async (req, res) => {
             image: req.file ? req.file.filename : null,
             src: req.file ? req.file.path : null,
             active: req.body.active,
-            teacherId:req.body.teacherId,
-            studentId:req.body.studentId,
+            teacherId: req.body.teacherId,
+            studentId: req.body.studentId,
         }
 
         const users = await User.create(data, transaction)
@@ -99,8 +99,8 @@ exports.create = async (req, res) => {
                 DOB: req.body.DOB,
                 TeacherType: req.body.TeacherType,
                 YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
-                image:users.image,
-                CousesId:req.body.CousesId,
+                image: users.image,
+                CousesId: req.body.CousesId,
                 LastName: users.LastName,
             };
             const teacher = await Teacher.create(teacherData, { transaction });
@@ -122,9 +122,9 @@ exports.create = async (req, res) => {
                 CoursesId: req.body.CoursesId,
                 Date: req.body.Date,
                 BatchId: req.body.BatchId,
-                image:users.image,
+                image: users.image,
                 LastName: users.LastName,
-               
+
             };
             const students = await Student.create(studentData, { transaction });
             await User.update({ studentId: students.id }, { where: { id: users.id }, transaction });
@@ -144,7 +144,7 @@ exports.create = async (req, res) => {
                     CoursesId: req.body.CoursesId,
                     Date: req.body.Date,
                     BatchId: req.body.BatchId,
-                    image:users.image,
+                    image: users.image,
                     LastName: users.LastName,
                 };
                 const students = await Student.create(studentData, { transaction });
@@ -163,8 +163,8 @@ exports.create = async (req, res) => {
                     DOB: req.body.DOB,
                     TeacherType: req.body.TeacherType,
                     YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
-                    image:users.image,
-                    CousesId:req.body.CousesId,
+                    image: users.image,
+                    CousesId: req.body.CousesId,
                     LastName: users.LastName,
                 };
                 const teacher = await Teacher.create(teacherData, { transaction });
@@ -276,10 +276,135 @@ exports.findAll = async (req, res) => {
     try {
 
         let subQuery = false
+        /* 
+                const loggedInUserId = req.profile.id;
+                const loggedInUser = await User.findOne({
+                    where: { id: loggedInUserId }, attributes: [
+                        "id",
+                        "name",
+                        "lastname",
+                        "userName",
+                        "phoneNumber",
+                        "email",
+                        "assignToUsers",
+                        "departmentId",
+                        "teacherId",
+                        "studentId",
+                        "roleName",
+                        "image",
+                        "src",
+                        "address",
+                        "message",
+                        "active",
+                    ], include: [{ model: Role }, { model: Address }, { model: Teacher }, { model: Student }]
+                });
+        
+                let where = {};
+                const usersdata = await User.findAll({ include: [{ model: Role }] })
+                console.log(usersdata.Role)
+                if (req.query.LeadGetAllowated) {
+                    if (['Admin', 'Counselor Department', 'Super Admin'].includes(loggedInUser.Role.Name && usersdata.Role.Name)) {
+                           console.log(usersdata.Role) 
+                      where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
+                        if (usersdata.departmentId === 10) {
+                            where = {departmentId:10, id: { [Op.ne]: loggedInUserId } }
+                        }
+                    }
+        
+                } else {
+                    if (['Admin', 'Super Admin', 'Administrator'].includes(loggedInUser.Role.Name)) {
+                        where = where;
+                    } else {
+                        where = { assignToUsers: loggedInUserId };
+                    }
+                }
+        
+                let conditions2 = {
+                    where, attributes: [
+                        "id",
+                        "name",
+                        "lastname",
+                        "userName",
+                        "phoneNumber",
+                        "email",
+                        "assignToUsers",
+                        "departmentId",
+                        "teacherId",
+                        "studentId",
+                        "roleName",
+                        "image",
+                        "src",
+                        "address",
+                        "message",
+                        "active",
+                        "createdAt",
+                    ], include: [{ model: Role }, { model: Address }],
+                    order: [['updatedAt', 'DESC']],
+                    subQuery: subQuery
+                }
+                const obj = {
+                    page: req.query.page,
+                    model: User,
+                    headers: req.headers.host,
+                    split: req.url.split("?")[0],
+                    condtion: conditions2,
+                    whereData: where
+                }
+                await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));")
+        
+        
+                const userchild = await paginationfun.pagination(obj)
+                 if (userchild) {
+                     if (req.query.LeadGetAllowated) {
+                         return res.status(200).json({
+                             success: userchild.rows.length ? true : false,
+                             message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
+                             users: userchild
+                         });
+                     } else {
+                         if (userchild && Array.isArray(userchild.rows)) {
+         
+                             const obj = {
+                                 page: req.query.page,
+                                 model: User,
+                                 headers: req.headers.host,
+                                 split: req.url.split("?")[0],
+                                 condtion: conditions2,
+                                 whereData: where
+                             }
+                             const allUserdata = await paginationfun.pagination(obj)
+         
+                             return res.status(200).json({
+                                 users: [loggedInUser, ...allUserdata.rows], success: allUserdata.rows.length ? true : false,
+                                 message: allUserdata.rows.length ? "Successfully retrieved all users" : "No data Found",
+                             });
+                         }
+                     }
+                 }
+        
+                if (userchild) {
+                    if (req.query.LeadGetAllowated) {
+                        return res.status(200).json({
+                            success: userchild.rows.length ? true : false,
+                            message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
+                            users: userchild
+                        });
+                    } else {
+                        return res.status(200).json({
+                            users: userchild,
+                            success: userchild.rows.length ? true : false,
+                            message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
+                        });
+                    }
+                } */
+
 
         const loggedInUserId = req.profile.id;
+
+        // Fetch the logged-in user's details
         const loggedInUser = await User.findOne({
-            where: { id: loggedInUserId }, attributes: [
+            where: { id: loggedInUserId },
+            attributes: [
                 "id",
                 "name",
                 "lastname",
@@ -296,25 +421,32 @@ exports.findAll = async (req, res) => {
                 "address",
                 "message",
                 "active",
-            ], include: [{ model: Role }, { model: Address }, { model: Teacher }, { model: Student }]
+            ],
+            include: [{ model: Role }, { model: Address }, { model: Teacher }, { model: Student }]
         });
 
         let where = {};
+        let includeRoles = [{ model: Role }, { model: Address }];
 
         if (req.query.LeadGetAllowated) {
-            if (loggedInUser.Role.Name == 'Telecaller Department' || loggedInUser.Role.Name == 'Telecaller Team'|| loggedInUser.Role.Name == 'Counselor Department' ||loggedInUser.Role.Name == 'Super Admin') {
+            if (['Admin', 'Counselor Department', 'Super Admin'].includes(loggedInUser.Role.Name)) {
                 where = { assignToUsers: loggedInUserId, id: { [Op.ne]: loggedInUserId } };
             }
+        }
+        else if (req.query.assignToUsers) {
+            // When assignToUsers query is present
+            where = { departmentId: { [Op.in]: [10] }, id: { [Op.ne]: loggedInUserId } };
         } else {
-            if (loggedInUser.Role.Name == 'Super Admin' || loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator") {
-                where = where;
+            if (['Admin', 'Super Admin', 'Administrator'].includes(loggedInUser.Role.Name)) {
+                where = where;  // No additional filtering
             } else {
                 where = { assignToUsers: loggedInUserId };
             }
         }
 
         let conditions2 = {
-            where, attributes: [
+            where,
+            attributes: [
                 "id",
                 "name",
                 "lastname",
@@ -332,10 +464,11 @@ exports.findAll = async (req, res) => {
                 "message",
                 "active",
                 "createdAt",
-            ], include: [{ model: Role }, { model: Address }],
+            ],
+            include: includeRoles,
             order: [['updatedAt', 'DESC']],
             subQuery: subQuery
-        }
+        };
         const obj = {
             page: req.query.page,
             model: User,
@@ -343,44 +476,55 @@ exports.findAll = async (req, res) => {
             split: req.url.split("?")[0],
             condtion: conditions2,
             whereData: where
-        }
-        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));")
+        };
 
+        // Disable ONLY_FULL_GROUP_BY SQL mode
+        await sequelize.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));");
 
-        const userchild = await paginationfun.pagination(obj)
+        // Get paginated users based on the conditions
+        const userchild = await paginationfun.pagination(obj);
+
         if (userchild) {
-            if (req.query.LeadGetAllowated) {
+            if (req.query.LeadGetAllowated || req.query.assignToUsers) {
                 return res.status(200).json({
                     success: userchild.rows.length ? true : false,
                     message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
                     users: userchild
                 });
             } else {
-                if (userchild && Array.isArray(userchild.rows)) {
-               
-                    const obj = {
-                        page: req.query.page,
-                        model: User,
-                        headers: req.headers.host,
-                        split: req.url.split("?")[0],
-                        condtion: conditions2,
-                        whereData: where
-                    }
-                    const allUserdata = await paginationfun.pagination(obj)
-                   
+                if (loggedInUser.Role.Name === "Super Admin") {
                     return res.status(200).json({
-                        users:[loggedInUser, ...allUserdata.rows] , success: allUserdata.rows.length ? true :false,
-                        message: allUserdata.rows.length ? "Successfully retrieved all users" : "No data Found",
+                        users: userchild,
+                        success: userchild.rows.length ? true : false,
+                        message: userchild.rows.length ? "Successfully retrieved all users" : "No data Found",
                     });
+                } else {
+                    if (userchild && Array.isArray(userchild.rows)) {
+                        const obj = {
+                            page: req.query.page,
+                            model: User,
+                            headers: req.headers.host,
+                            split: req.url.split("?")[0],
+                            condtion: conditions2,
+                            whereData: where
+                        }
+                        const allUserdata = await paginationfun.pagination(obj)
+
+                        return res.status(200).json({
+                            users: [loggedInUser, ...allUserdata.rows], success: allUserdata.rows.length ? true : false,
+                            message: allUserdata.rows.length ? "Successfully retrieved all users" : "No data Found",
+                        });
+                    }
                 }
+
             }
         }
-
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         res.status(500).json({ error, success: false, message: "Failed to retrieve users" });
     }
-};
+}
 
 
 
@@ -408,7 +552,7 @@ exports.update = async (req, res) => {
             return res.status(404).json({ message: 'Department role not found' });
         }
 
-        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department','Super Admin'].includes(departmentRole.Name)) {
+        if (['Admin', 'Instructor', 'Administrator', 'Student', 'Guest/Viewer', 'Sale Department', 'Telecaller Department', 'Front Desk', 'Receptions Desk', 'Counselor Department', 'Account Department', 'Super Admin'].includes(departmentRole.Name)) {
             roleWiseUsers = 'Admin';
         } else if (departmentRole.Name === 'Telecaller Team') {
             roleWiseUsers = 'Sub Admin';
@@ -418,7 +562,7 @@ exports.update = async (req, res) => {
 
         const data = {
             name: req.body.name,
-            lastname:req.body.lastname,
+            lastname: req.body.lastname,
             userName: req.body.userName,
             phoneNumber: req.body.phoneNumber,
             email: req.body.email,
@@ -468,8 +612,8 @@ exports.update = async (req, res) => {
                 DOB: req.body.DOB,
                 TeacherType: req.body.TeacherType,
                 YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
-                image:updatedUser.image,
-                CousesId:req.body.CousesId,
+                image: updatedUser.image,
+                CousesId: req.body.CousesId,
                 LastName: updatedUser.LastName,
             };
 
@@ -488,7 +632,7 @@ exports.update = async (req, res) => {
                 CoursesId: req.body.CoursesId,
                 Date: req.body.Date,
                 BatchId: req.body.BatchId,
-                image:updatedUser.image,
+                image: updatedUser.image,
                 LastName: updatedUser.LastName,
             };
             const student = await Student.update(studentData, { where: { id: updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
@@ -504,14 +648,14 @@ exports.update = async (req, res) => {
                     PhoneNumber: updatedUser.phoneNumber,
                     roleId: updatedUser.id,
                     AddressableId: updatedUser.AddressableId,
-                    CoursesId:req.body.CoursesId,
-                    Date:req.body.Date,
-                    BatchId:req.body.BatchId,
-                    image:updatedUser.image,
+                    CoursesId: req.body.CoursesId,
+                    Date: req.body.Date,
+                    BatchId: req.body.BatchId,
+                    image: updatedUser.image,
                     LastName: updatedUser.LastName,
-                  };
-                  const student = await Student.update(studentData, { where: { id:updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
-                  await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
+                };
+                const student = await Student.update(studentData, { where: { id: updatedUser.studentId }, order: [['updatedAt', 'DESC']], transaction });
+                await User.update({ studentId: student.id }, { where: { id: updatedUser.id }, transaction });
             }
             if (updatedUser.teacherId) {
                 const teacherData = {
@@ -522,15 +666,15 @@ exports.update = async (req, res) => {
                     PhoneNumber: updatedUser.phoneNumber,
                     roleId: updatedUser.id,
                     AddressableId: updatedUser.AddressableId,
-                    DOB:req.body.DOB,
-                    TeacherType:req.body.TeacherType,
-                    YourIntroducationAndSkills:req.body.YourIntroducationAndSkills,
-                    image:updatedUser.image,
-                    CousesId:req.body.CousesId,
+                    DOB: req.body.DOB,
+                    TeacherType: req.body.TeacherType,
+                    YourIntroducationAndSkills: req.body.YourIntroducationAndSkills,
+                    image: updatedUser.image,
+                    CousesId: req.body.CousesId,
                     LastName: updatedUser.LastName,
-                  };
-                  const teacher = await Teacher.update(teacherData, { where: { id:updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
-                  await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
+                };
+                const teacher = await Teacher.update(teacherData, { where: { id: updatedUser.teacherId }, order: [['updatedAt', 'DESC']], transaction });
+                await User.update({ teacherId: teacher.id }, { where: { id: updatedUser.id }, transaction });
             }
         }
 

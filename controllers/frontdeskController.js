@@ -1,6 +1,6 @@
 
 const { Op } = require('sequelize');
-const { FrontDesk, User, Role, Address, Courses, Countries, Staties, Cities, sequelize } = require('../models')
+const { FrontDesk, User, Role, Address, Courses, Countries, Staties, Cities, sequelize,SaleTeam } = require('../models')
 let paginationfun = require("../controllers/paginationController");
 const nodemailer = require("nodemailer");
 const ejs = require("ejs");
@@ -21,6 +21,7 @@ exports.create = async (req, res) => {
     let transaction = await sequelize.transaction();
     try {
         // Create the FrontDesk entry
+        req.body.roleId=req.profile.id
         let frontdesk = await FrontDesk.create(req.body, { transaction });
         const enquiryId = generateEnquiryId(frontdesk.id);
         // Update the FrontDesk entry with the generated enquiryId
@@ -39,29 +40,8 @@ exports.create = async (req, res) => {
             { where: { id: frontdesk.id }, transaction }
         );
         // Commit the transaction
-        await transaction.commit();
+     
         await SaleTeam.update(
-            {
-                name: frontdesk.name,
-                username: frontdesk.username,
-                lastname: frontdesk.lastname,
-                phoneNumber: frontdesk.phoneNumber,
-                email: frontdesk.email,
-                workingStatus: frontdesk.workingStatus,
-                leadPlatform: frontdesk.leadPlatform,
-                status: frontdesk.status,
-                remark: frontdesk.remark,
-                age: frontdesk.age,
-                lead_status: frontdesk.lead_status,
-                courseId: frontdesk.courseId,
-                batchId: frontdesk.batchId,
-                AddressableId: frontdesk.AddressableId,
-                date:frontdesk.date,
-                lead_status:frontdesk.lead_status
-            },
-            { where: { email: frontdesk.email } }
-        );
-        await TelecallerDepartment.update(
             {
                 name: frontdesk.name,
                 username: frontdesk.username,
@@ -79,10 +59,11 @@ exports.create = async (req, res) => {
                 AddressableId: frontdesk.AddressableId,
                 visitDate:frontdesk.visitDate,
                 date:frontdesk.date,
-                lead_status:frontdesk.lead_status
+                WhatsApp:frontdesk.WhatsApp
             },
-            { where: { email: frontdesk.email } }
+            { where: { email: frontdesk.email }, transaction }
         );
+        await transaction.commit();
         res.status(200).json({
             frontdesk: frontdesk,
             address: address,
@@ -154,7 +135,7 @@ exports.findAll = async (req, res) => {
             "message",
             "active",
         ], include: [{ model: Role }] ,transaction});
-        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator"||loggedInUser.Role.Name == "Super Admin") 
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator" || loggedInUser.Role.Name == "Super Admin") 
             where = {}  
         else {
             where = { roleId: loggedInUserId }

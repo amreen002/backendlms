@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Student, { foreignKey: 'AddressableId' ,   constraints: false});  
       this.hasMany(models.Teacher, { foreignKey: 'AddressableId' ,   constraints: false});  
       this.hasMany(models.FrontDesk, { foreignKey: 'AddressableId' ,   constraints: false});  
+      this.hasMany(models.SaleTeam, { foreignKey: 'AddressableId' ,   constraints: false});  
       this.belongsTo(models.Countries, {
         foreignKey: 'CountryId',
         constraints: false,
@@ -47,47 +48,38 @@ module.exports = (sequelize, DataTypes) => {
     AddressType: {
       field: 'AddressType',
       type: DataTypes.STRING,
-      allowNull: false
     },
     PostalCode: {
       field: 'PostalCode',
       type: DataTypes.INTEGER,
-      allowNull: true
     },
     Address: {
       field: 'Address',
       type: DataTypes.TEXT,
-      allowNull: false
     },
     City: {
       field: 'City',
       type: DataTypes.STRING,
-      allowNull: false
     },
     DistrictId: {
       field: 'DistrictId',
       type: DataTypes.INTEGER,
-      allowNull: true
     },
     StateId: {
       field: 'StateId',
       type: DataTypes.INTEGER,
-      allowNull: false
     },
     CountryId: {
       field: 'CountryId',
       type: DataTypes.INTEGER,
-      allowNull: false
     },
     IsSame: {
       field: 'IsSame',
       type: DataTypes.BOOLEAN,
-      allowNull: true
     },
     Area: {
       field: 'Area',
       type: DataTypes.STRING,
-      allowNull: true
     },
   }, {
     sequelize,

@@ -10,19 +10,20 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Batch, { foreignKey: 'CoursesId' });
       this.hasMany(models.Student, { foreignKey: 'CoursesId' });
       this.hasMany(models.FrontDesk, { foreignKey: 'courseId' });
+      this.hasMany(models.SaleTeam, { foreignKey: 'courseId' });
       this.hasMany(models.Topic, { foreignKey: 'CoursesId' });
       this.hasMany(models.Lession, { foreignKey: 'CoursesId' });
       this.hasMany(models.Video, { foreignKey: 'CoursesId' });
-      this.hasMany(models.Quize , { foreignKey: 'CourseId' });
+      this.hasMany(models.Quize, { foreignKey: 'CourseId' });
       this.hasMany(models.Teacher, { foreignKey: 'CousesId' });
     }
-    
+
   }
   Courses.init({
     name: {
       type: DataTypes.STRING
     },
-    userId:{
+    userId: {
       type: DataTypes.INTEGER,
     },
     CoursePrice: {
@@ -33,30 +34,30 @@ module.exports = (sequelize, DataTypes) => {
       field: 'CourseCategoryId',
       type: DataTypes.INTEGER,
     },
-    CourseDuration :{
+    CourseDuration: {
       field: 'CourseDuration',
-      type: DataTypes.STRING,    
+      type: DataTypes.STRING,
     },
-    CourseCode:{
+    CourseCode: {
       field: 'CourseCode',
       type: DataTypes.STRING,
     },
-    CourseUplod:{
+    CourseUplod: {
       field: 'CourseUplod',
-      type: DataTypes.STRING,    
+      type: DataTypes.STRING,
     },
-    Status:{
+    Status: {
       field: 'Status',
-      type: DataTypes.BOOLEAN,   
-      defaultValue:0
+      type: DataTypes.BOOLEAN,
+      defaultValue: 0
     },
-    AboutCourse:{
+    AboutCourse: {
       field: 'AboutCourse',
-      type: DataTypes.TEXT('long'),   
+      type: DataTypes.TEXT('long'),
     },
-    Description:{
+    Description: {
       field: 'Description',
-      type: DataTypes.TEXT('long'),   
+      type: DataTypes.TEXT('long'),
     }
 
   }, {

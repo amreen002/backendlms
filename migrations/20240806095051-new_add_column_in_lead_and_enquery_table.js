@@ -5,7 +5,7 @@
 module.exports = {
   up(queryInterface, Sequelize) {
     return Promise.all([
-      queryInterface.addColumn(
+    queryInterface.addColumn(
         'saleteams', // table name
         'lastname', // new field name
         {
@@ -67,8 +67,9 @@ module.exports = {
           defaultValue: 0,
         },
       ),
+      // frontdesks
       queryInterface.addColumn(
-        'telecallerdepartments', // table name
+        'frontdesks', // table name
         'lastname', // new field name
         {
           field: 'lastname',
@@ -76,7 +77,7 @@ module.exports = {
         },
       ),
       queryInterface.addColumn(
-        'telecallerdepartments', // table name
+        'frontdesks', // table name
         'username', // new field name
         {
           field: 'username',
@@ -84,7 +85,7 @@ module.exports = {
         },
       ),
       queryInterface.addColumn(
-        'telecallerdepartments', // table name
+        'frontdesks', // table name
         'lead_status', // new field name
         {
           field: 'lead_status',
@@ -92,17 +93,7 @@ module.exports = {
         },
       ),
       queryInterface.addColumn(
-        'telecallerdepartments', // table name
-        'courseId', // new field name
-        {
-          field: 'courseId',
-          type: Sequelize.INTEGER,
-          allowNull: true,
-          defaultValue: 0,
-        },
-      ),
-      queryInterface.addColumn(
-        'telecallerdepartments',
+        'frontdesks',
         'batchId',
         {
           field: 'batchId',
@@ -112,15 +103,14 @@ module.exports = {
         }
       ),
       queryInterface.addColumn(
-        'telecallerdepartments',
-        'AddressableId',
+        'frontdesks',
+        'status',
         {
-          field: 'AddressableId',
-          type: Sequelize.INTEGER,
-          allowNull: true,
-          defaultValue: 0,
-        },
+          field: 'status',
+          type: Sequelize.ENUM('1st Call', '2nd Call', '3rd Call', '4rd Call', 'Not Responding (N/R)', 'Other'),
+        }
       ),
+      
     ]);
   },
 
@@ -133,11 +123,10 @@ module.exports = {
       queryInterface.removeColumn('saleteams', 'courseId'),
       queryInterface.removeColumn('saleteams', 'batchId'),
       queryInterface.removeColumn('saleteams', 'AddressableId'),
-      queryInterface.removeColumn('telecallerdepartments', 'lastname'),
-      queryInterface.removeColumn('telecallerdepartments', 'username'),
-      queryInterface.removeColumn('telecallerdepartments', 'courseId'),
-      queryInterface.removeColumn('telecallerdepartments', 'batchId'),
-      queryInterface.removeColumn('telecallerdepartments', 'AddressableId'),
+      queryInterface.removeColumn('frontdesks', 'lastname'),
+      queryInterface.removeColumn('frontdesks', 'username'),
+      queryInterface.removeColumn('frontdesks', 'courseId'),
+      queryInterface.removeColumn('frontdesks', 'batchId'),
     ]);
   },
 };

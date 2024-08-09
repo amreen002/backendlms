@@ -1,6 +1,6 @@
 
 const { Op } = require('sequelize');
-const { SaleTeam, User, sequelize, Address } = require('../models')
+const { SaleTeam, User, sequelize, Address, Role, Courses } = require('../models')
 let paginationfun = require("../controllers/paginationController");
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction()
@@ -71,7 +71,7 @@ exports.findOne = async (req, res) => {
 exports.findAll = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
-        let where = {}
+        let where;
         const searchTerm = req.query.searchTerm;
         if (searchTerm) {
             where = {
@@ -82,8 +82,33 @@ exports.findAll = async (req, res) => {
             };
         }
 
+        const loggedInUserId = req.profile.id;
+        const loggedInUser = await User.findOne({
+            where: { id: loggedInUserId }, attributes: [
+                "id",
+                "name",
+                "userName",
+                "phoneNumber",
+                "email",
+                "assignToUsers",
+                "departmentId",
+                "teacherId",
+                "studentId",
+                "roleName",
+                "image",
+                "src",
+                "address",
+                "message",
+                "active",
+            ], include: [{ model: Role }], transaction
+        });
+        if (loggedInUser.Role.Name == "Admin" || loggedInUser.Role.Name == "Administrator" || loggedInUser.Role.Name == "Super Admin")
+            where = {}
+        else {
+            where = { roleId: loggedInUserId }
+        }
 
-        let conditions2 = { where, order: [['updatedAt', 'DESC']], transaction }
+        let conditions2 = { where, include: [{ model: User, include: [{ model: Role }] }, { model: Address }, { model: Courses }], order: [['updatedAt', 'DESC']], transaction }
         const obj = {
             page: req.query.page,
             model: SaleTeam,
