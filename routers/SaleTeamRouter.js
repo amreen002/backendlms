@@ -6,6 +6,14 @@ router.post('/addsaleteam', checkauth, getLogedInUser, saleteam.create)
 
 router.get('/listsaleteam',checkauth, getLogedInUser, saleteam.findAll);
 
+router.post('/inputfeilds',checkauth, getLogedInUser,saleteam.createfeild)
+
+router.patch('/inputfeilds/:saleteamId',checkauth, getLogedInUser,saleteam.updatefeild)
+
+router.get('/inputfeilds',checkauth, getLogedInUser,saleteam.findAllfeild)
+
+router.get('/inputfeilds/:saleteamId',checkauth, getLogedInUser, saleteam.findOnefeild)
+
 router.get('/listsaleteam/:saleteamId', checkauth, getLogedInUser,saleteam.findOne);
 
 router.patch('/viewssaleteam/:saleteamId', checkauth, getLogedInUser, saleteam.update);

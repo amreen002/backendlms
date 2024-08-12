@@ -1,7 +1,78 @@
 
 const { Op } = require('sequelize');
-const { SaleTeam, User, sequelize, Address, Role, Courses } = require('../models')
+const { SaleTeam, User, sequelize, Address, Role, Courses, Multipleinput } = require('../models')
 let paginationfun = require("../controllers/paginationController");
+
+exports.createfeild = async (req, res) => {
+    try {
+        console.log(req.body)
+        await Multipleinput.create(req.body)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            error: error,
+            success: false,
+            message: "Sale Team  error"
+        })
+    }
+}
+exports.updatefeild = async (req, res) => {
+    try {
+        console.log( req.body )
+        await Multipleinput.update(
+             req.body , // Update only the checkedInputs field
+             { 
+                where: { id: req.params.saleteamId }, // Use the dynamic ID for updating
+                order: [['updatedAt', 'DESC']] 
+            }
+        );
+        return res.status(200).json({
+            success: true,
+            message: "Sale Team fields updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: error.message,
+            success: false,
+            message: "Sale Team error"
+        });
+    }
+};
+exports.findAllfeild=async (req, res) => {
+    try {
+       const checkedInputs = await Multipleinput.findAll();
+        return res.status(200).json({
+            checkedInputs,
+            success: true,
+            message: "Sale Team fields updated successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            error: error.message,
+            success: false,
+            message: "Sale Team error"
+        });
+    }
+}
+exports.findOnefeild = async (req, res) => {
+    try {
+        const checkedInputs = await Multipleinput.findAll({ where: { id: req.params.saleteamId }, order: [['updatedAt', 'DESC']] });
+        res.status(200).json({
+            checkedInputs: checkedInputs,
+            success: true,
+            message: "get one Sale Team by ID"
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            error: error,
+            success: false,
+            message: 'error in getting the Sale Team '
+        });
+    }
+}
 exports.create = async (req, res) => {
     let transaction = await sequelize.transaction()
     try {
